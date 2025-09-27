@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sad_app_v2"
+version = "2.0.0"
+authors = [
+  { name="Seu Nome", email="seu.email@example.com" },
+]
+description = "Sistema de Automação de Documentos v2.0"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "customtkinter==5.2.2",
+    "openpyxl==3.1.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.1.1",
+    "ruff==0.1.9",
+]
+
+[tool.ruff]
+# Habilita as regras principais do Flake8 (E, F, W) e isort (I)
+select = ["E", "F", "W", "I"]
+line-length = 88
+ignore = []
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
