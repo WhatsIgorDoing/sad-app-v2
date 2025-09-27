@@ -38,3 +38,6 @@ addopts = "-ra -q"
 testpaths = [
     "tests",
 ]
+filterwarnings = [
+    "ignore::DeprecationWarning:openpyxl.*",
+]
