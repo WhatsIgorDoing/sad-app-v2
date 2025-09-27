@@ -1,5 +1,3 @@
-# src/sad_app_v2/infrastructure/file_system.py
-
 from pathlib import Path
 from typing import List
 

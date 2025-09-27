@@ -1,5 +1,3 @@
-# tests/unit/core/use_cases/test_validate_batch.py
-
 from pathlib import Path
 from unittest.mock import MagicMock
 

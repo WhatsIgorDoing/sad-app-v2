@@ -1,6 +1,3 @@
-# tests/unit/core/test_interfaces.py
-
-
 def test_interfaces_import():
     """
     Verifica se todas as interfaces podem ser importadas sem erro.

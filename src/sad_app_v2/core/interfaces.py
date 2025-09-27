@@ -1,5 +1,3 @@
-# src/sad_app_v2/core/interfaces.py
-
 from pathlib import Path
 from typing import List, Optional, Protocol
 

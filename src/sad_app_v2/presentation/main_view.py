@@ -1,5 +1,3 @@
-# src/sad_app_v2/presentation/main_view.py
-
 import customtkinter as ctk
 
 
@@ -30,7 +28,9 @@ class MainView(ctk.CTk):
         # Manifesto
         self.manifest_label = ctk.CTkLabel(self.top_frame, text="Manifesto de Entrada:")
         self.manifest_label.grid(row=0, column=0, padx=10, pady=5)
-        self.manifest_entry = ctk.CTkEntry(self.top_frame, placeholder_text="Selecione o arquivo do manifesto...")
+        self.manifest_entry = ctk.CTkEntry(
+            self.top_frame, placeholder_text="Selecione o arquivo do manifesto..."
+        )
         self.manifest_entry.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
         self.manifest_button = ctk.CTkButton(self.top_frame, text="Selecionar...")
         self.manifest_button.grid(row=0, column=2, padx=10, pady=5)
@@ -38,7 +38,9 @@ class MainView(ctk.CTk):
         # Pasta de Origem
         self.source_dir_label = ctk.CTkLabel(self.top_frame, text="Pasta de Origem:")
         self.source_dir_label.grid(row=1, column=0, padx=10, pady=5)
-        self.source_dir_entry = ctk.CTkEntry(self.top_frame, placeholder_text="Selecione a pasta com os documentos...")
+        self.source_dir_entry = ctk.CTkEntry(
+            self.top_frame, placeholder_text="Selecione a pasta com os documentos..."
+        )
         self.source_dir_entry.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
         self.source_dir_button = ctk.CTkButton(self.top_frame, text="Selecionar...")
         self.source_dir_button.grid(row=1, column=2, padx=10, pady=5)
@@ -69,7 +71,9 @@ class MainView(ctk.CTk):
         self.validated_list.configure(state="disabled")
 
         # Coluna Direita
-        self.unrecognized_label = ctk.CTkLabel(tab, text="Arquivos Não Reconhecidos (0)")
+        self.unrecognized_label = ctk.CTkLabel(
+            tab, text="Arquivos Não Reconhecidos (0)"
+        )
         self.unrecognized_label.grid(row=0, column=1, padx=10, pady=5)
         self.unrecognized_list = ctk.CTkTextbox(tab)
         self.unrecognized_list.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")

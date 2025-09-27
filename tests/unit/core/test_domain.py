@@ -1,5 +1,3 @@
-# tests/unit/core/test_domain.py
-
 from pathlib import Path
 
 from src.sad_app_v2.core.domain import (
