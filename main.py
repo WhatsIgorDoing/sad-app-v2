@@ -4,7 +4,6 @@
 Ponto de entrada da aplicação SAD App v2.0.
 """
 
-from src.sad_app_v2.presentation.controller import MainController
 from src.sad_app_v2.presentation.main_view import MainView
 
 
@@ -12,14 +11,11 @@ def main():
     """
     Função principal da aplicação.
     """
-    # Cria a view
-    view = MainView()
-
-    # Cria o controller e conecta com a view
-    MainController(view)
+    # Cria a view (que já cria o controller internamente)
+    app = MainView()
 
     # Inicia a aplicação
-    view.start()
+    app.start()
 
 
 if __name__ == "__main__":
