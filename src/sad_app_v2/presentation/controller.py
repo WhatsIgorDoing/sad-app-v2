@@ -2,7 +2,7 @@ import threading
 from pathlib import Path
 from typing import Optional
 
-from src.sad_app_v2.core.domain import DocumentGroup
+from src.sad_app_v2.core.domain import DocumentGroup, DocumentStatus
 from src.sad_app_v2.core.interfaces import (
     CoreError,
     IFileRepository,
@@ -165,9 +165,17 @@ class MainController:
         Args:
             result: Resultado da validação
         """
+        # Separa arquivos por status
+        valid_documents = [
+            doc for doc in result.files if doc.status == DocumentStatus.VALIDATED
+        ]
+        invalid_documents = [
+            doc for doc in result.files if doc.status == DocumentStatus.UNRECOGNIZED
+        ]
+
         # Atualiza contadores nos labels
-        validated_count = len(result.valid_documents)
-        unrecognized_count = len(result.invalid_documents)
+        validated_count = len(valid_documents)
+        unrecognized_count = len(invalid_documents)
 
         self.view.validated_label.configure(
             text=f"📄 Arquivos Validados ({validated_count})"
@@ -184,15 +192,15 @@ class MainController:
         self.view.unrecognized_list.delete("1.0", "end")
 
         # Popula lista de arquivos validados
-        for doc in result.valid_documents:
+        for doc in valid_documents:
             self.view.validated_list.insert(
-                "end", f"✅ {doc.file_path.name} ({doc.total_size_mb:.1f} MB)\n"
+                "end", f"✅ {doc.path.name} ({doc.size_bytes / 1024 / 1024:.1f} MB)\n"
             )
 
         # Popula lista de arquivos não reconhecidos
-        for doc in result.invalid_documents:
+        for doc in invalid_documents:
             self.view.unrecognized_list.insert(
-                "end", f"❌ {doc.file_path.name} ({doc.total_size_mb:.1f} MB)\n"
+                "end", f"❌ {doc.path.name} ({doc.size_bytes / 1024 / 1024:.1f} MB)\n"
             )
 
         # Desabilita edição das listas

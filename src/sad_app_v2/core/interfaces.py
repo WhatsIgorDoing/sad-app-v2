@@ -119,3 +119,16 @@ class ITemplateFiller(Protocol):
     ) -> None:
         """Abre um template, preenche com dados e o salva em um novo local."""
         ...
+
+
+# Exceções específicas para o caso de uso de resolução
+class ExtractionFailedError(CoreError):
+    """Erro quando a extração de código falha."""
+
+    ...
+
+
+class CodeNotInManifestError(CoreError):
+    """Erro quando o código extraído não existe no manifesto."""
+
+    ...

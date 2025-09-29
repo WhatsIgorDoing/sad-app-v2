@@ -1,5 +1,3 @@
-# src/sad_app_v2/core/use_cases/validate_batch.py
-
 from pathlib import Path
 from typing import Dict, List, Tuple
 

@@ -1,5 +1,3 @@
-# src/sad_app_v2/presentation/view_controller.py
-
 import threading
 from pathlib import Path
 from tkinter import filedialog, messagebox
@@ -7,7 +5,6 @@ from typing import TYPE_CHECKING
 
 import customtkinter as ctk
 
-# --- Importações da nossa arquitetura ---
 from ..core.interfaces import CoreError
 from ..core.use_cases.validate_batch import ValidateBatchUseCase
 from ..infrastructure.excel_reader import ExcelManifestRepository

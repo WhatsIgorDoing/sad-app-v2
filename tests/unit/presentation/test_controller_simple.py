@@ -1,5 +1,3 @@
-# tests/unit/presentation/test_controller_simple.py
-
 from pathlib import Path
 from unittest.mock import MagicMock
 

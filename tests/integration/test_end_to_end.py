@@ -1,5 +1,3 @@
-# tests/integration/test_end_to_end.py
-
 from pathlib import Path
 
 from src.sad_app_v2.core.use_cases.validate_batch import ValidateBatchUseCase

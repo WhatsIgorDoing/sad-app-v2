@@ -1,5 +1,3 @@
-# tests/integration/infrastructure/test_file_system.py
-
 from src.sad_app_v2.infrastructure.file_system import FileSystemFileRepository
 
 

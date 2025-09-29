@@ -1,9 +1,3 @@
-# main.py
-
-"""
-Ponto de entrada da aplicação SAD App v2.0.
-"""
-
 from src.sad_app_v2.presentation.main_view import MainView
 
 

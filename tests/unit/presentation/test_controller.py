@@ -1,5 +1,3 @@
-# tests/unit/presentation/test_controller.py
-
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -128,9 +126,8 @@ class TestMainController:
             path=Path("test2.pdf"), size_bytes=2048, status=DocumentStatus.UNRECOGNIZED
         )
 
-        result = DocumentGroup(
-            valid_documents=[valid_doc], invalid_documents=[invalid_doc]
-        )
+        # Cria um grupo de documentos usando a API atual
+        result = DocumentGroup(document_code="123", files=[valid_doc, invalid_doc])
 
         # Executa update
         controller._update_results(result)

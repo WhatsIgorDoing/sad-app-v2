@@ -18,6 +18,9 @@ classifiers = [
 dependencies = [
     "customtkinter==5.2.2",
     "openpyxl==3.1.2",
+    "PyPDF2==3.0.1",
+    "python-docx==1.1.0",
+    "PyYAML==6.0.1",
 ]
 
 [project.optional-dependencies]

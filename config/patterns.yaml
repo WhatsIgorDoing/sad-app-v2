@@ -1,0 +1,27 @@
+# Perfis de extração de códigos de documentos
+
+profiles:
+  RIR:
+    name: "Relatório de Inspeção em Redes"
+    description: "Perfil para extração de códigos de relatórios RIR"
+    patterns:
+      # Padrão para capturar códigos RIR no formato: CZ6_RNEST_U22_3.1.1.1_CVL_RIR_B-22026A
+      - 'Relatório:\s*([A-Z0-9_\.\-]+)'
+      - 'Código:\s*([A-Z0-9_\.\-]+)'
+      - '([A-Z0-9]+_[A-Z0-9]+_[A-Z0-9]+_[\d\.]+_[A-Z]+_RIR_[A-Z0-9\-]+)'
+    
+  PID:
+    name: "Projeto de Instrumentação e Diagrama"
+    description: "Perfil para extração de códigos PID"
+    patterns:
+      - 'PID:\s*([A-Z0-9_\-]+)'
+      - 'Diagrama:\s*([A-Z0-9_\-]+)'
+      - '([A-Z0-9]+_[A-Z0-9]+_[A-Z0-9]+_[\d\.]+_[A-Z]+_PID_[A-Z0-9\-]+)'
+
+  GERAL:
+    name: "Perfil Genérico"
+    description: "Perfil genérico para códigos de documento"
+    patterns:
+      - 'Documento:\s*([A-Z0-9_\-]+)'
+      - 'Código:\s*([A-Z0-9_\-]+)'
+      - '([A-Z0-9_\-]{10,})'

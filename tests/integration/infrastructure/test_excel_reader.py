@@ -1,5 +1,3 @@
-# tests/integration/infrastructure/test_excel_reader.py
-
 from pathlib import Path
 
 import pytest
