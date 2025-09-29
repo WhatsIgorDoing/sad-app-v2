@@ -72,3 +72,13 @@ class OutputLot:
     def total_size_bytes(self) -> int:
         """Calcula o tamanho total de todos os grupos no lote."""
         return sum(group.total_size_bytes for group in self.groups)
+
+
+@dataclass
+class OrganizationResult:
+    """Estrutura para reportar o resultado da operação de organização."""
+
+    lots_created: int = 0
+    files_moved: int = 0
+    success: bool = True
+    message: str = "Operação concluída com sucesso."

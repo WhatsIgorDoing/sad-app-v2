@@ -1,5 +1,3 @@
-# tests/integration/infrastructure/test_template_filler.py
-
 from pathlib import Path
 
 import openpyxl
