@@ -85,7 +85,10 @@ def test_output_lot_creation():
     file1 = DocumentFile(path="test1.pdf", size_bytes=500)
     file2 = DocumentFile(path="test2.docx", size_bytes=1500)
 
-    lot = OutputLot(lot_name=lot_name, files=[file1, file2])
+    # Criar um grupo de documentos
+    group = DocumentGroup(document_code="group1", files=[file1, file2])
+
+    lot = OutputLot(lot_name=lot_name, groups=[group])
 
     assert lot.lot_name == lot_name
     assert len(lot.files) == 2

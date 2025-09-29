@@ -57,9 +57,8 @@ class OutputLot:
     """Representa um lote de saída com grupos de documentos organizados."""
 
     lot_name: str
-    groups: List['DocumentGroup'] = field(default_factory=list)
-    total_size_bytes: int = 0
-    
+    groups: List["DocumentGroup"] = field(default_factory=list)
+
     # Mantém compatibilidade com código existente
     @property
     def files(self) -> List[DocumentFile]:
@@ -68,3 +67,8 @@ class OutputLot:
         for group in self.groups:
             all_files.extend(group.files)
         return all_files
+
+    @property
+    def total_size_bytes(self) -> int:
+        """Calcula o tamanho total de todos os grupos no lote."""
+        return sum(group.total_size_bytes for group in self.groups)

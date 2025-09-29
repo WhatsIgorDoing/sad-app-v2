@@ -115,7 +115,11 @@ class ITemplateFiller(Protocol):
     """Contrato para um serviço que preenche um template Excel."""
 
     def fill_and_save(
-        self, template_path: Path, output_path: Path, data: List[ManifestItem]
+        self,
+        template_path: Path,
+        output_path: Path,
+        # Alterado para receber DocumentGroup, que contém toda a informação
+        data: List["DocumentGroup"],
     ) -> None:
         """Abre um template, preenche com dados e o salva em um novo local."""
         ...
