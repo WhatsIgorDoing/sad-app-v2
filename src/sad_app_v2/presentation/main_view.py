@@ -73,8 +73,8 @@ class MainView(ctk.CTk):
         self._create_validation_tab_layout(self.tab_validation)
         self._create_organization_tab_layout(self.tab_organization)
 
-        # A aba de organização começa desabilitada
-        self.tab_view.tab("2. Organização e Saída").configure(state="disabled")
+        # Nota: CustomTkinter não suporta desabilitar abas via state
+        # A lógica de controle será feita via controller
 
     def _create_validation_tab_layout(self, tab):
         tab.grid_columnconfigure((0, 1), weight=1)
@@ -222,6 +222,10 @@ class MainView(ctk.CTk):
     def set_progress(self, value: float):
         """Define o valor da barra de progresso (0.0 a 1.0)."""
         self.progress_bar.set(value)
+
+    def set_organize_button_state(self, state: str):
+        """Define o estado do botão organizar (normal/disabled)."""
+        self.organize_button.configure(state=state)
 
     def start(self):
         self.mainloop()

@@ -45,17 +45,22 @@ class OpenpyxlTemplateFiller(ITemplateFiller):
 
                 # Cria uma linha para cada arquivo físico no grupo
                 for file in group.files:
+                    # Ordem correta dos campos conforme template:
+                    # DOCUMENTO | REVISÃO | TÍTULO | ARQUIVO | FORMATO | DISCIPLINA | TIPO DE DOCUMENTO | PROPÓSITO | CAMINHO DATABOOK
                     row_data = [
-                        manifest_info.revision,
-                        manifest_info.title,
-                        file.path.name,  # O nome do arquivo físico
-                        # Lógica para extrair formato (ex: A1), se necessário
-                        # Por enquanto, deixaremos em branco ou um valor padrão
-                        manifest_info.metadata.get("FORMATO", ""),
-                        manifest_info.metadata.get("DISCIPLINA", ""),
-                        manifest_info.metadata.get("TIPO DE DOCUMENTO", ""),
-                        manifest_info.metadata.get("PROPÓSITO", ""),
-                        manifest_info.metadata.get("CAMINHO DATABOOK", ""),
+                        manifest_info.document_code,  # DOCUMENTO
+                        manifest_info.revision,  # REVISÃO
+                        manifest_info.title,  # TÍTULO
+                        file.path.name,  # ARQUIVO (nome do arquivo físico)
+                        manifest_info.metadata.get("FORMATO", "A4"),  # FORMATO
+                        manifest_info.metadata.get("DISCIPLINA", ""),  # DISCIPLINA
+                        manifest_info.metadata.get(
+                            "TIPO DE DOCUMENTO", ""
+                        ),  # TIPO DE DOCUMENTO
+                        manifest_info.metadata.get("PROPÓSITO", ""),  # PROPÓSITO
+                        manifest_info.metadata.get(
+                            "CAMINHO DATABOOK", ""
+                        ),  # CAMINHO DATABOOK
                     ]
                     sheet.append(row_data)
 

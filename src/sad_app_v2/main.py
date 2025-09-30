@@ -20,6 +20,10 @@ def main():
         def extract_text(self, file, profile_id):
             return file.path.stem
 
+        def find_code(self, text, profile_id):
+            # Implementação simples: retorna o próprio texto como código
+            return text if text else None
+
     extractor_service = SimpleExtractorService()
 
     # Criação da view principal

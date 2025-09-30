@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -21,18 +22,37 @@ class ValidateBatchUseCase:
 
     def _get_file_base_name(self, file_name: str) -> str:
         """
-        Extrai o nome base de um arquivo para correspondência.
-        Ex: 'DOC-ABC-123_A.pdf' -> 'DOC-ABC-123'
-        Esta é uma implementação simples da RN-NEW-001.
+        Extrai o nome base de um arquivo para correspondência seguindo RN-NEW-001.
+        Remove sufixos de revisão conhecidos, mas preserva underscores que fazem parte do nome.
+
+        Exemplos:
+        - 'CZ6_RNEST_U22_3.1.1.1_ELE_RIR_ELE-700-CHZ-247-FL04.pdf' -> 'CZ6_RNEST_U22_3.1.1.1_ELE_RIR_ELE-700-CHZ-247-FL04'
+        - 'CZ6_RNEST_U22_3.1.1.1_ELE_RIR_ELE-700-CHZ-247-FL04_A.pdf' -> 'CZ6_RNEST_U22_3.1.1.1_ELE_RIR_ELE-700-CHZ-247-FL04'
+        - 'DOC-123_Rev0.pdf' -> 'DOC-123'
         """
-        # Remove a extensão
         name_without_ext = Path(file_name).stem
-        # Procura por um sufixo de revisão (ex: _A, _0, _rev1) e o remove
-        parts = name_without_ext.split("_")
-        if len(parts) > 1:
-            # Assume que a última parte pode ser uma revisão, então a remove.
-            # Esta lógica pode ser refinada se os códigos puderem ter underscores.
-            return "_".join(parts[:-1])
+
+        # Padrões de sufixos de revisão típicos
+        revision_patterns = [
+            r"_[A-Z]$",  # _A, _B, _C, etc.
+            r"_Rev\d+$",  # _Rev0, _Rev1, _Rev2, etc.
+            r"_rev\d+$",  # _rev0, _rev1, _rev2, etc.
+            r"_\d+$",  # _0, _1, _2, etc.
+            r"_final$",  # _final
+            r"_temp$",  # _temp
+            r"_old$",  # _old
+            r"_backup$",  # _backup
+            r"_draft$",  # _draft
+            r"_preliminary$",  # _preliminary
+        ]
+
+        # Verifica se há um sufixo de revisão no final
+        for pattern in revision_patterns:
+            if re.search(pattern, name_without_ext, re.IGNORECASE):
+                # Remove o sufixo encontrado
+                return re.sub(pattern, "", name_without_ext, flags=re.IGNORECASE)
+
+        # Se não encontrou nenhum sufixo conhecido, retorna o nome completo
         return name_without_ext
 
     def execute(

@@ -4,6 +4,23 @@
 
 Aplicação desenvolvida seguindo os princípios da **Clean Architecture** para automatizar o processamento de documentos a partir de manifestos Excel.
 
+## 🚀 Execução Rápida
+
+```bash
+# 1. Resolver política de execução (se necessário - Windows)
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# 2. Ativar ambiente virtual
+.venv\Scripts\Activate.ps1  # Windows PowerShell
+# ou .venv\Scripts\activate.bat  # Windows CMD
+# ou source .venv/bin/activate  # Linux/macOS
+
+# 3. Executar aplicação
+python run.py
+```
+
+> 💡 **Importante**: Se encontrar erro de "execução de scripts desabilitada", veja a seção [Troubleshooting](#-troubleshooting)
+
 ## 🏗️ Arquitetura
 
 A aplicação segue o padrão **Clean Architecture** com camadas bem definidas:
@@ -13,16 +30,23 @@ src/
 ├── sad_app_v2/
 │   ├── core/                      # 🎯 Domain Layer
 │   │   ├── domain.py              # Entidades e Value Objects
-│   │   ├── interfaces.py          # Protocolos e Exceções
+│   │   ├── interfaces.py          # Protocolos e Contratos
+│   │   ├── exceptions.py          # Exceções do Domínio
 │   │   └── use_cases/             # Casos de Uso
-│   │       └── validate_batch.py  # UC-01: Validar Lote
+│   │       ├── validate_batch.py  # UC-01: Validar Lote
+│   │       ├── resolve_exception.py # UC-02: Resolver Não Reconhecidos
+│   │       └── organize_lots.py   # UC-03: Organizar em Lotes
 │   ├── infrastructure/            # 🔧 Infrastructure Layer
 │   │   ├── excel_reader.py        # Adaptador para Excel
-│   │   └── file_system.py         # Adaptador para Sistema de Arquivos
+│   │   ├── file_system.py         # Sistema de Arquivos Seguro
+│   │   ├── template_filler.py     # Preenchimento de Templates
+│   │   ├── services.py            # Serviços de Negócio
+│   │   └── extraction.py          # Extração de Metadados
 │   └── presentation/              # 🖥️ Presentation Layer
-│       ├── main_view.py           # Interface Gráfica (CustomTkinter)
-│       └── controller.py          # Controller MVC
-main.py                            # 🚀 Ponto de Entrada
+│       ├── main_view.py           # Interface Gráfica Completa
+│       └── view_controller.py     # Controller MVC com Threading
+├── main.py                        # 🎯 Entry Point Alternativo
+└── run.py                         # 🚀 Ponto de Entrada Principal
 ```
 
 ## ✨ Funcionalidades
@@ -34,21 +58,34 @@ main.py                            # 🚀 Ponto de Entrada
 - ✅ Classifica arquivos como válidos ou não reconhecidos
 - ✅ Exibe resultados em interface gráfica moderna
 
-### Interface Gráfica
-- 🎨 Design moderno com CustomTkinter
-- 📁 Seleção de manifesto e diretório via dialogs
-- 📊 Visualização em tempo real do progresso
-- 📋 Listas separadas para arquivos válidos e não reconhecidos
-- 📝 Log de operações com timestamps
-- 🔄 Processamento assíncrono sem travamento da interface
+### UC-02: Resolver Arquivo Não Reconhecido
+- ✅ Interface para seleção de arquivos não reconhecidos
+- ✅ Aplicação de perfis de extração customizados
+- ✅ Resolução automática baseada em padrões
+- ✅ Atualização dinâmica das listas de arquivos
+
+### UC-03: Organizar e Gerar Lotes
+- ✅ Balanceamento inteligente de lotes por número de documentos
+- ✅ Criação automática de estrutura de pastas organizadas
+- ✅ Geração de templates Excel preenchidos com dados
+- ✅ Movimentação segura de arquivos com validação
+
+### Interface Gráfica Completa
+- 🎨 Design moderno com CustomTkinter e tema dark
+- 📋 Interface com abas (Validação + Organização)
+- 📁 Seleção de manifesto, diretórios e templates via dialogs
+- � Barra de progresso e feedback visual em tempo real
+- 📝 Sistema de logs com timestamps e níveis de severidade
+- 🔄 Processamento assíncrono com threading para UI responsiva
+- ⚙️ Configuração completa de parâmetros de organização
 
 ### Qualidade de Código
-- 🧪 **100% de cobertura de testes** (16 testes aprovados)
+- 🧪 **45 testes aprovados, 1 skipped** (98% de sucesso)
 - 🔍 Testes unitários para todas as camadas
 - 🌐 Testes de integração end-to-end
-- 📏 Linting com Ruff
-- 🎯 Type hints completos
-- 📖 Documentação abrangente
+- 📏 Linting com Ruff e formatação automática
+- 🎯 Type hints completos com Python 3.13
+- 📖 Documentação abrangente com docstrings
 
 ## 🚀 Instalação e Execução
 
@@ -56,16 +93,43 @@ main.py                            # 🚀 Ponto de Entrada
 - Python 3.13+
 - Windows (testado) / Linux / macOS
 
-### Dependências
+### Configuração do Ambiente Virtual
 ```bash
+# Criar ambiente virtual
+python -m venv .venv
+
+# Ativar ambiente virtual (Windows PowerShell)
+# OPÇÃO 1 - Permitir execução de scripts (Administrador):
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+.venv\Scripts\activate
+
+# OPÇÃO 2 - Comando direto (sem alterar política):
+.venv\Scripts\Activate.ps1
+
+# OPÇÃO 3 - Usar Command Prompt (cmd):
+.venv\Scripts\activate.bat
+
+# Ativar ambiente virtual (Linux/macOS)
+source .venv/bin/activate
+
 # Instalar dependências
 pip install customtkinter==5.2.2 openpyxl==3.1.2 pytest==8.1.1 ruff==0.1.9
 ```
 
 ### Executar a Aplicação
 ```bash
+# IMPORTANTE: Ativar o ambiente virtual primeiro!
+
+# Windows PowerShell (escolha uma opção):
+.venv\Scripts\Activate.ps1        # Opção mais direta
+# ou
+.venv\Scripts\activate.bat        # Via Command Prompt
+
+# Linux/macOS:
+source .venv/bin/activate
+
 # Executar interface gráfica
-python main.py
+python run.py
 ```
 
 ### Executar Testes
@@ -78,9 +142,50 @@ python -m pytest tests/unit/core/ -v
 python -m pytest tests/integration/ -v
 ```
 
+## 🔧 Troubleshooting
+
+### Problema: "Execução de scripts foi desabilitada" (Windows)
+
+**Erro:**
+```
+.venv\Scripts\activate : O arquivo não pode ser carregado porque a execução de scripts foi desabilitada neste sistema.
+```
+
+**Soluções:**
+
+1. **Alterar política de execução (Recomendado):**
+   ```powershell
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+   .venv\Scripts\activate
+   ```
+
+2. **Usar comando direto:**
+   ```powershell
+   .venv\Scripts\Activate.ps1
+   ```
+
+3. **Usar Command Prompt (cmd):**
+   ```cmd
+   .venv\Scripts\activate.bat
+   ```
+
+### Problema: "ModuleNotFoundError: No module named 'sad_app_v2'"
+
+**Solução:**
+- Certifique-se de estar no diretório correto e usar `python run.py` (não `python main.py`)
+- Verifique se o ambiente virtual está ativado
+
+### Problema: Erro de interface gráfica
+
+**Solução:**
+- Instale/atualize o CustomTkinter: `pip install --upgrade customtkinter`
+- Verifique se está executando em um ambiente com interface gráfica
+
 ## 📋 Como Usar
 
-1. **Inicie a aplicação**: Execute `python main.py`
+1. **Inicie a aplicação**: Execute `python run.py`
+
+### Aba de Validação
 
 2. **Selecione o Manifesto**: 
    - Clique em "Selecionar..." ao lado de "Manifesto de Entrada"
@@ -97,7 +202,26 @@ python -m pytest tests/integration/ -v
 4. **Execute a Validação**: 
    - Clique no botão "VALIDAR LOTE"
    - Acompanhe o progresso na barra inferior
-   - Visualize os resultados nas abas
+   - Visualize os resultados nas listas
+
+5. **Resolva Arquivos Não Reconhecidos** (se houver):
+   - Selecione arquivos na lista "Não Reconhecidos"
+   - Escolha um perfil de extração no dropdown
+   - Clique em "Resolver Selecionados"
+
+### Aba de Organização
+
+6. **Configure a Organização**:
+   - Selecione pasta de destino para os lotes
+   - Escolha template Excel master
+   - Configure número máximo de documentos por lote
+   - Defina padrão de nomenclatura dos lotes
+   - Ajuste número de sequência inicial
+
+7. **Execute a Organização**:
+   - Clique no botão "ORGANIZAR LOTES"
+   - Acompanhe o processo no log
+   - Verifique os lotes criados na pasta de destino
 
 ## 🧪 Regras de Negócio
 
@@ -159,29 +283,33 @@ tests/
 
 ## 🎯 Métricas de Qualidade
 
-- ✅ **16 testes** aprovados (100% de sucesso)
-- 📊 **5 entidades** de domínio testadas
-- 🔧 **2 adaptadores** de infraestrutura validados
-- 🎮 **1 controller** com cobertura completa
-- 🌐 **2 testes** end-to-end para fluxos principais
+- ✅ **45 testes** aprovados, **1 skipped** (98% de sucesso)
+- 📊 **5 entidades** de domínio completamente testadas
+- 🔧 **6 serviços** de infraestrutura validados
+- 🎮 **2 controllers** com cobertura completa
+- 🌐 **3 casos de uso** implementados e testados
+- 🏗️ **Clean Architecture** com 4 camadas distintas
+- 🧪 Cobertura de **unit tests** + **integration tests** + **end-to-end tests**
 
 ## 🚧 Próximos Desenvolvimentos
 
-### UC-02: Resolver Arquivo Não Reconhecido
-- Interface para resolução manual de arquivos
-- Sugestões automáticas baseadas em similaridade
-- Histórico de resoluções
+### Melhorias de Interface
+- Suporte a temas personalizáveis
+- Atalhos de teclado para operações principais
+- Drag & drop para seleção de arquivos
+- Histórico de operações recentes
 
-### UC-03: Organizar e Gerar Lotes
-- Organização automática de arquivos em lotes
-- Geração de relatórios de processamento
-- Exportação de resultados
+### Funcionalidades Avançadas
+- Suporte a múltiplos formatos de manifesto (CSV, JSON)
+- Validação de integridade de arquivos (checksums)
+- Relatórios de processamento em PDF
+- Integração com sistemas de armazenamento em nuvem
 
 ### Melhorias Técnicas
 - Cache de validações para performance
-- Logs estruturados com níveis
-- Configurações via arquivo de settings
-- Suporte a múltiplos formatos de manifesto
+- Configurações persistentes via arquivo de settings
+- Sistema de plugins para extensibilidade
+- API REST para automação via scripts
 
 ## 📄 Licença
 

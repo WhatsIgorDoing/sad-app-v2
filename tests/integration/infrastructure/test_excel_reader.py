@@ -17,12 +17,12 @@ def test_load_from_file_happy_path():
 
     # Verificação
     assert len(items) == 2
-    assert items[0].document_code == "DOC-001-TEST"
+    assert items[0].document_code == "documento_pid"
     assert items[0].revision == "A"
-    assert items[0].title == "Documento de Teste Um"
-    assert items[0].metadata["DISCIPLINA"] == "ENGENHARIA"
+    assert items[0].title == "Documento PID de Teste"
+    assert items[0].metadata["DISCIPLINA"] == "PROCESSO"
 
-    assert items[1].document_code == "DOC-002-TEST"
+    assert items[1].document_code == "documento_rir"
 
 
 def test_load_from_file_not_found():

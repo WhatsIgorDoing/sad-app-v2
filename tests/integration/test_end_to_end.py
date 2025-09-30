@@ -11,8 +11,8 @@ def test_validate_batch_end_to_end(tmp_path):
     para validar um lote de documentos.
     """
     # Setup: Criar arquivos de teste que correspondem ao manifesto
-    (tmp_path / "DOC-001-TEST_A.pdf").touch()
-    (tmp_path / "DOC-002-TEST_B.dwg").touch()
+    (tmp_path / "documento_pid_A.pdf").touch()
+    (tmp_path / "documento_rir_B.dwg").touch()
     (tmp_path / "DOC-999-UNKNOWN_C.docx").touch()  # Este não está no manifesto
 
     # Usar o manifesto de exemplo que já temos
@@ -31,13 +31,13 @@ def test_validate_batch_end_to_end(tmp_path):
     )
 
     # Verificação
-    assert len(validated) == 2  # DOC-001-TEST e DOC-002-TEST
+    assert len(validated) == 2  # documento_pid e documento_rir
     assert len(unrecognized) == 1  # DOC-999-UNKNOWN
 
     # Verifica os arquivos validados
     validated_codes = {f.associated_manifest_item.document_code for f in validated}
-    assert "DOC-001-TEST" in validated_codes
-    assert "DOC-002-TEST" in validated_codes
+    assert "documento_pid" in validated_codes
+    assert "documento_rir" in validated_codes
 
     # Verifica o arquivo não reconhecido
     assert unrecognized[0].path.name == "DOC-999-UNKNOWN_C.docx"
@@ -51,8 +51,8 @@ def test_validate_batch_with_subdirectories(tmp_path):
     sub_dir = tmp_path / "subdir"
     sub_dir.mkdir()
 
-    (tmp_path / "DOC-001-TEST_A.pdf").touch()
-    (sub_dir / "DOC-002-TEST_B.dwg").touch()
+    (tmp_path / "documento_pid_A.pdf").touch()
+    (sub_dir / "documento_rir_B.dwg").touch()
 
     manifest_path = Path("tests/fixtures/manifesto_exemplo.xlsx")
 

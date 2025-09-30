@@ -48,20 +48,25 @@ def test_fill_and_save_creates_and_fills_correctly(tmp_path):
     workbook = openpyxl.load_workbook(output_path)
     sheet = workbook.active
 
-    # Verifica cabeçalhos (permaneceram intactos?)
-    assert sheet["A1"].value == "REVISÃO"
-    assert sheet["C1"].value == "ARQUIVO"
+    # Verifica cabeçalhos (permaneceram intactos?) - nova estrutura
+    assert sheet["A1"].value == "DOCUMENTO"
+    assert sheet["B1"].value == "REVISÃO"
+    assert sheet["C1"].value == "TÍTULO"
+    assert sheet["D1"].value == "ARQUIVO"
 
-    # Verifica a primeira linha de dados (para o PDF)
-    assert sheet["A2"].value == "C"
-    assert sheet["B2"].value == "Teste Final"
-    assert sheet["C2"].value == "DOC-FINAL_C.pdf"
-    assert sheet["E2"].value == "TESTES"
+    # Verifica a primeira linha de dados (para o PDF) - nova estrutura
+    assert sheet["A2"].value == "DOC-FINAL"  # DOCUMENTO
+    assert sheet["B2"].value == "C"  # REVISÃO
+    assert sheet["C2"].value == "Teste Final"  # TÍTULO
+    assert sheet["D2"].value == "DOC-FINAL_C.pdf"  # ARQUIVO
+    assert sheet["F2"].value == "TESTES"  # DISCIPLINA
 
-    # Verifica a segunda linha de dados (para o DWG)
-    assert sheet["A3"].value == "C"
-    assert sheet["C3"].value == "DOC-FINAL_C.dwg"
-    assert sheet["G3"].value == "Verificação"
+    # Verifica a segunda linha de dados (para o DWG) - nova estrutura
+    assert sheet["A3"].value == "DOC-FINAL"  # DOCUMENTO
+    assert sheet["B3"].value == "C"  # REVISÃO
+    assert sheet["C3"].value == "Teste Final"  # TÍTULO
+    assert sheet["D3"].value == "DOC-FINAL_C.dwg"  # ARQUIVO
+    assert sheet["H3"].value == "Verificação"  # PROPÓSITO
 
 
 def test_fill_and_save_raises_error_for_missing_template(tmp_path):
