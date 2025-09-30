@@ -5,8 +5,8 @@ profiles:
     name: "Relatório de Inspeção em Redes"
     description: "Perfil para extração de códigos de relatórios RIR"
     patterns:
-      # Padrão para capturar códigos RIR no formato: CZ6_RNEST_U22_3.1.1.1_CVL_RIR_B-22026A
-      - 'Relatório:\s*([A-Z0-9_\.\-]+)'
+      # Padrão melhorado para capturar nomes com espaços até hífen ou fim da linha
+      - 'Relatório:\s*([A-Z0-9_\.\-\s]+?)(?:\s*-|\s*$|\r|\n)'
       - 'Código:\s*([A-Z0-9_\.\-]+)'
       - '([A-Z0-9]+_[A-Z0-9]+_[A-Z0-9]+_[\d\.]+_[A-Z]+_RIR_[A-Z0-9\-]+)'
     

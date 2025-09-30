@@ -11,20 +11,17 @@ from sad_app_v2.presentation.view_controller import ViewController
 
 def main():
     """Função principal que configura e inicia a aplicação."""
+    from pathlib import Path
+
+    from sad_app_v2.infrastructure.extraction import ProfiledExtractorService
+
     # Configurações do CustomTkinter
     ctk.set_appearance_mode("dark")
     ctk.set_default_color_theme("blue")
 
-    # Implementação simples do extractor service
-    class SimpleExtractorService:
-        def extract_text(self, file, profile_id):
-            return file.path.stem
-
-        def find_code(self, text, profile_id):
-            # Implementação simples: retorna o próprio texto como código
-            return text if text else None
-
-    extractor_service = SimpleExtractorService()
+    # Configuração do serviço de extração completo
+    config_path = Path("config/patterns.yaml")
+    extractor_service = ProfiledExtractorService(config_path)
 
     # Criação da view principal
     app = MainView()
@@ -33,6 +30,10 @@ def main():
     controller = ViewController(extractor_service)
     app.set_controller(controller)
     controller.set_view(app)
+
+    # Carregar perfis no ComboBox
+    profiles = ["PID", "GERAL"]  # Perfis além do RIR
+    app.populate_profiles_dropdown(profiles)
 
     # Inicialização da aplicação
     app.mainloop()

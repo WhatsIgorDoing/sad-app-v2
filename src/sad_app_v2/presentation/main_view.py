@@ -92,12 +92,15 @@ class MainView(ctk.CTk):
         self.resolve_panel = ctk.CTkFrame(tab)
         self.resolve_panel.grid(row=2, column=1, padx=10, pady=10, sticky="ew")
         self.resolve_panel.grid_columnconfigure(0, weight=1)
+
+        # ComboBox de perfis e botão de resolver
         self.profile_combobox = ctk.CTkComboBox(self.resolve_panel, values=[])
         self.profile_combobox.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
         self.resolve_button = ctk.CTkButton(
             self.resolve_panel, text="Tentar Resolver Selecionados"
         )
         self.resolve_button.grid(row=0, column=1, padx=10, pady=10)
+
         self.set_resolve_panel_state("disabled")
 
     def _create_organization_tab_layout(self, tab):
@@ -176,10 +179,11 @@ class MainView(ctk.CTk):
         self.resolve_button.configure(state=state)
 
     def populate_profiles_dropdown(self, profiles: List[str]):
-        # ... (sem alterações)
-        self.profile_combobox.configure(values=profiles)
-        if profiles:
-            self.profile_combobox.set(profiles[0])
+        # Adicionar RIR como primeira opção especial
+        rir_profiles = ["🔍 RIR (buscar nome no documento)"] + profiles
+        self.profile_combobox.configure(values=rir_profiles)
+        if rir_profiles:
+            self.profile_combobox.set(rir_profiles[0])
 
     def update_validated_list(self, validated_files: List[DocumentFile]):
         # ... (sem alterações)
@@ -203,7 +207,11 @@ class MainView(ctk.CTk):
             widget.destroy()
         self.unrecognized_checkboxes.clear()
         for i, file in enumerate(sorted(unrecognized_files, key=lambda f: f.path.name)):
-            checkbox = ctk.CTkCheckBox(self.unrecognized_frame, text=file.path.name)
+            checkbox = ctk.CTkCheckBox(
+                self.unrecognized_frame,
+                text=file.path.name,
+                command=self._on_checkbox_change,
+            )
             checkbox.grid(row=i, column=0, padx=5, pady=2, sticky="w")
             self.unrecognized_checkboxes[file.path.name] = checkbox
 
@@ -218,6 +226,11 @@ class MainView(ctk.CTk):
         self.log_textbox.configure(state="normal")
         self.log_textbox.delete("1.0", ctk.END)
         self.log_textbox.configure(state="disabled")
+
+    def _on_checkbox_change(self):
+        """Callback chamado quando um checkbox é marcado/desmarcado."""
+        if self.controller:
+            self.controller.on_checkbox_selection_changed()
 
     def set_progress(self, value: float):
         """Define o valor da barra de progresso (0.0 a 1.0)."""

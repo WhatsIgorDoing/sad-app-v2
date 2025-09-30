@@ -18,7 +18,7 @@ from sad_app_v2.infrastructure.file_system import (
 from sad_app_v2.infrastructure.services import GreedyLotBalancerService
 from sad_app_v2.infrastructure.template_filler import OpenpyxlTemplateFiller
 
-from ..core.domain import DocumentFile
+from ..core.domain import DocumentFile, DocumentStatus
 from ..infrastructure.excel_reader import ExcelManifestRepository
 
 
@@ -127,10 +127,19 @@ class ViewController:
             f for f in self.unrecognized_files if f.path.name in selected_filenames
         ]
 
-        for file in files_to_resolve:
-            threading.Thread(
-                target=self._run_resolution, args=(file, profile_id), daemon=True
-            ).start()
+        # Verificar se RIR foi selecionado (primeira opção do ComboBox)
+        if profile_id.startswith("🔍 RIR"):
+            # Usar lógica específica do RIR
+            for file in files_to_resolve:
+                threading.Thread(
+                    target=self._run_rir_resolution, args=(file,), daemon=True
+                ).start()
+        else:
+            # Usar lógica genérica
+            for file in files_to_resolve:
+                threading.Thread(
+                    target=self._run_resolution, args=(file, profile_id), daemon=True
+                ).start()
 
     def _run_resolution(self, file: DocumentFile, profile_id: str):
         try:
@@ -138,13 +147,100 @@ class ViewController:
                 self.extractor_service, self.extractor_service
             )
             resolved_file = use_case.execute(file, profile_id, self.all_manifest_items)
+
+            # Se o perfil é RIR, renomear arquivo com nome extraído
+            if profile_id == "RIR":
+                self.view.after(
+                    0,
+                    self.view.add_log_message,
+                    f"🔍 RIR GENÉRICO: Processando '{file.path.name}'",
+                )
+
+                # Extrair texto e buscar nome após "Relatório:"
+                extracted_text = self.extractor_service.extract_text(file, profile_id)
+                import re
+
+                # Padrão específico para pegar o código RIR (mais de 3 caracteres, com underscores)
+                pattern = r"Relatório:\s*([A-Z0-9_\.\-]{4,}(?:_[A-Z0-9_\.\-]+)*)"
+                self.view.after(
+                    0,
+                    self.view.add_log_message,
+                    f"🔎 RIR GENÉRICO: Buscando padrão '{pattern}'",
+                )
+
+                # Buscar todas as ocorrências e pegar a que tem mais caracteres
+                matches = re.findall(
+                    pattern, extracted_text, re.IGNORECASE | re.MULTILINE
+                )
+                match = None
+                if matches:
+                    # Pegar a correspondência mais longa (mais específica)
+                    longest_match = max(matches, key=len)
+                    if len(longest_match) > 3:  # Deve ter mais que 3 caracteres
+                        match = type(
+                            "Match", (), {"group": lambda self, n: longest_match}
+                        )()
+                        self.view.after(
+                            0,
+                            self.view.add_log_message,
+                            f"🎯 RIR GENÉRICO: Encontradas {len(matches)} correspondências, usando a mais longa",
+                        )
+                    else:
+                        match = None
+
+                if match:
+                    extracted_name = match.group(1).strip()
+                    self.view.after(
+                        0,
+                        self.view.add_log_message,
+                        f"✅ RIR GENÉRICO: Nome extraído: '{extracted_name}'",
+                    )
+
+                    # Renomear arquivo com nome extraído (sempre usar o nome extraído)
+                    file_manager = SafeFileSystemManager()
+                    original_path = file.path
+                    file_extension = original_path.suffix
+
+                    # Usar revisão do manifesto se disponível, senão usar "A"
+                    revision = (
+                        resolved_file.associated_manifest_item.revision
+                        if resolved_file.associated_manifest_item
+                        else "A"
+                    )
+                    new_filename = f"{extracted_name}_{revision}{file_extension}"
+                    new_path = original_path.parent / new_filename
+
+                    self.view.after(
+                        0,
+                        self.view.add_log_message,
+                        f"🔄 RIR GENÉRICO: Renomeando para '{new_filename}'",
+                    )
+
+                    # Renomear fisicamente
+                    file_manager.move_file(original_path, new_path)
+
+                    # Atualizar caminho do arquivo resolvido
+                    resolved_file.path = new_path
+
+                    manifest_status = (
+                        "manifesto: OK"
+                        if resolved_file.associated_manifest_item
+                        else "manifesto: N/A"
+                    )
+                    success_msg = f"🎉 RIR GENÉRICO: '{original_path.name}' → '{new_filename}' (extraído: '{extracted_name}', {manifest_status})"
+                else:
+                    self.view.after(
+                        0,
+                        self.view.add_log_message,
+                        f"❌ RIR GENÉRICO: Padrão não encontrado",
+                    )
+                    success_msg = f"⚠️ RIR GENÉRICO: '{file.path.name}' resolvido sem extração de nome"
+            else:
+                success_msg = f"Arquivo '{file.path.name}' resolvido com sucesso."
+
             self.unrecognized_files.remove(file)
             self.validated_files.append(resolved_file)
-            self.view.after(
-                0,
-                self.view.add_log_message,
-                f"Arquivo '{file.path.name}' resolvido com sucesso.",
-            )
+            self.view.after(0, self.view.add_log_message, success_msg)
             self.view.after(0, self._update_ui_lists)
         except CoreError as e:
             self.view.after(
@@ -154,6 +250,239 @@ class ViewController:
                 f"Erro ao resolver '{file.path.name}':\n{e}",
             )
         finally:
+            self.view.after(0, self.view.set_resolve_panel_state, "normal")
+
+    def _run_rir_resolution(self, file: DocumentFile):
+        """Executa a resolução específica para RIR em thread separada."""
+        try:
+            # Log inicial
+            self.view.after(
+                0,
+                self.view.add_log_message,
+                f"🔍 RIR: Iniciando resolução para '{file.path.name}'",
+            )
+
+            # 1. Extrair texto do documento
+            self.view.after(
+                0,
+                self.view.add_log_message,
+                f"📄 RIR: Extraindo texto de '{file.path.name}'",
+            )
+            extracted_text = self.extractor_service.extract_text(file, "RIR")
+
+            if not extracted_text:
+                self.view.after(
+                    0, self.view.add_log_message, f"❌ RIR: Falha na extração de texto"
+                )
+                raise CoreError("Não foi possível extrair texto do documento")
+
+            # Log do texto extraído (primeiros 200 caracteres)
+            text_preview = extracted_text[:200].replace("\n", " ").replace("\r", " ")
+            self.view.after(
+                0,
+                self.view.add_log_message,
+                f"📋 RIR: Texto extraído (preview): '{text_preview}...'",
+            )
+
+            # 2. Buscar nome após "Relatório:" especificamente
+            import re
+
+            # Padrão específico para pegar o código RIR (mais de 3 caracteres, com underscores)
+            pattern = r"Relatório:\s*([A-Z0-9_\.\-]{4,}(?:_[A-Z0-9_\.\-]+)*)"
+            self.view.after(
+                0, self.view.add_log_message, f"🔎 RIR: Buscando padrão: '{pattern}'"
+            )
+
+            # Buscar todas as ocorrências e pegar a que tem mais caracteres
+            matches = re.findall(pattern, extracted_text, re.IGNORECASE | re.MULTILINE)
+            match = None
+            if matches:
+                # Pegar a correspondência mais longa (mais específica)
+                longest_match = max(matches, key=len)
+                if len(longest_match) > 3:  # Deve ter mais que 3 caracteres
+                    match = type(
+                        "Match", (), {"group": lambda self, n: longest_match}
+                    )()
+                    self.view.after(
+                        0,
+                        self.view.add_log_message,
+                        f"🎯 RIR: Encontradas {len(matches)} correspondências, usando a mais longa",
+                    )
+                else:
+                    match = None
+
+            if not match:
+                self.view.after(
+                    0,
+                    self.view.add_log_message,
+                    f"❌ RIR: Padrão não encontrado no texto",
+                )
+                raise CoreError(
+                    "Não foi encontrado nome do relatório após 'Relatório:' no documento"
+                )
+
+            extracted_name = match.group(1).strip()
+            self.view.after(
+                0,
+                self.view.add_log_message,
+                f"✅ RIR: Nome extraído: '{extracted_name}'",
+            )
+            self.view.after(
+                0,
+                self.view.add_log_message,
+                f"📏 RIR: Tamanho do nome: {len(extracted_name)} caracteres",
+            )
+
+            # 3. Buscar item correspondente no manifesto
+            self.view.after(
+                0,
+                self.view.add_log_message,
+                f"🔍 RIR: Buscando '{extracted_name}' no manifesto ({len(self.all_manifest_items)} itens)",
+            )
+            matched_item = None
+            items_checked = 0
+            for item in self.all_manifest_items:
+                items_checked += 1
+                if (
+                    extracted_name.upper() in item.document_code.upper()
+                    or item.document_code.upper() in extracted_name.upper()
+                ):
+                    matched_item = item
+                    self.view.after(
+                        0,
+                        self.view.add_log_message,
+                        f"✅ RIR: Correspondência encontrada após {items_checked} itens",
+                    )
+                    self.view.after(
+                        0,
+                        self.view.add_log_message,
+                        f"📋 RIR: Item manifesto: '{item.document_code}' (rev: {item.revision})",
+                    )
+                    break
+
+            if not matched_item:
+                self.view.after(
+                    0,
+                    self.view.add_log_message,
+                    f"⚠️ RIR: Não encontrado no manifesto (verificou {items_checked} itens)",
+                )
+
+            # 4. Renomear arquivo com nome extraído (sempre usar o nome extraído)
+            self.view.after(
+                0,
+                self.view.add_log_message,
+                f"📁 RIR: Preparando renomeação de '{file.path.name}'",
+            )
+            file_manager = SafeFileSystemManager()
+            original_path = file.path
+            file_extension = original_path.suffix
+
+            # Gerar novo nome: nome_extraído_revisão.extensão
+            # Se encontrou no manifesto, usar a revisão. Senão, usar "A" como padrão
+            revision = matched_item.revision if matched_item else "A"
+            new_filename = f"{extracted_name}_{revision}{file_extension}"
+            new_path = original_path.parent / new_filename
+
+            self.view.after(
+                0,
+                self.view.add_log_message,
+                f"🔄 RIR: '{original_path.name}' → '{new_filename}' (rev: {revision})",
+            )
+
+            # Renomear o arquivo fisicamente
+            self.view.after(
+                0,
+                self.view.add_log_message,
+                f"💾 RIR: Executando renomeação física do arquivo",
+            )
+            file_manager.move_file(original_path, new_path)
+            self.view.after(
+                0, self.view.add_log_message, f"✅ RIR: Arquivo renomeado com sucesso"
+            )
+
+            # 5. Criar arquivo resolvido com novo caminho
+            self.view.after(
+                0,
+                self.view.add_log_message,
+                f"📝 RIR: Criando objeto DocumentFile para '{new_path.name}'",
+            )
+            resolved_file = DocumentFile(new_path, file.size_bytes)
+            if matched_item:
+                resolved_file.manifest_item = matched_item
+                resolved_file.status = DocumentStatus.VALIDATED
+                self.view.after(
+                    0,
+                    self.view.add_log_message,
+                    f"✅ RIR: Status definido como VALIDATED",
+                )
+            else:
+                # Se não encontrou no manifesto, manter como reconhecido mas sem item
+                resolved_file.status = DocumentStatus.RECOGNIZED
+                self.view.after(
+                    0,
+                    self.view.add_log_message,
+                    f"⚠️ RIR: Status definido como RECOGNIZED (sem manifesto)",
+                )
+
+            # 6. Atualizar listas
+            self.view.after(
+                0, self.view.add_log_message, f"📊 RIR: Atualizando listas de arquivos"
+            )
+            self.unrecognized_files.remove(file)
+            if matched_item:
+                self.validated_files.append(resolved_file)
+                self.view.after(
+                    0,
+                    self.view.add_log_message,
+                    f"✅ RIR: Adicionado à lista validated_files ({len(self.validated_files)} itens)",
+                )
+            else:
+                # Se não tem item no manifesto, adicionar à lista de reconhecidos
+                if not hasattr(self, "recognized_files"):
+                    self.recognized_files = []
+                self.recognized_files.append(resolved_file)
+                self.view.after(
+                    0,
+                    self.view.add_log_message,
+                    f"⚠️ RIR: Adicionado à lista recognized_files ({len(self.recognized_files)} itens)",
+                )
+
+            # 7. Log da operação final
+            if matched_item:
+                log_msg = f"🎉 RIR SUCESSO: '{original_path.name}' → '{new_filename}' (extraído: '{extracted_name}', manifesto: OK)"
+            else:
+                log_msg = f"🎉 RIR SUCESSO: '{original_path.name}' → '{new_filename}' (extraído: '{extracted_name}', manifesto: N/A)"
+
+            self.view.after(0, self.view.add_log_message, log_msg)
+            self.view.after(
+                0, self.view.add_log_message, f"🔄 RIR: Atualizando interface..."
+            )
+            self.view.after(0, self._update_ui_lists)
+
+        except CoreError as e:
+            self.view.after(0, self.view.add_log_message, f"❌ RIR ERRO: {str(e)}")
+            self.view.after(
+                0,
+                messagebox.showinfo,
+                "Falha na Resolução RIR",
+                f"Erro ao resolver RIR '{file.path.name}':\n{e}",
+            )
+        except Exception as e:
+            self.view.after(
+                0, self.view.add_log_message, f"💥 RIR ERRO CRÍTICO: {str(e)}"
+            )
+            self.view.after(
+                0,
+                messagebox.showinfo,
+                "Erro Inesperado",
+                f"Erro inesperado ao processar '{file.path.name}':\n{e}",
+            )
+        finally:
+            self.view.after(
+                0,
+                self.view.add_log_message,
+                f"🏁 RIR: Finalizando processamento de '{file.path.name}'",
+            )
             self.view.after(0, self.view.set_resolve_panel_state, "normal")
 
     def on_organize_lots_click(self):
@@ -236,7 +565,22 @@ class ViewController:
         self.view.progress_bar.set(0)
         self.view.add_log_message("Pronto para nova operação.")
 
-        if self.unrecognized_files:
+        # Atualizar estado dos botões baseado na seleção atual
+        self.on_checkbox_selection_changed()
+
+    def on_checkbox_selection_changed(self):
+        """Atualiza o estado dos botões baseado na seleção de checkboxes."""
+        if not hasattr(self, "unrecognized_files") or not self.unrecognized_files:
+            # Não há arquivos não reconhecidos
+            self.view.set_resolve_panel_state("disabled")
+            return
+
+        # Verificar se há algum checkbox marcado
+        has_selection = any(
+            cb.get() == 1 for cb in self.view.unrecognized_checkboxes.values()
+        )
+
+        if has_selection:
             self.view.set_resolve_panel_state("normal")
         else:
             self.view.set_resolve_panel_state("disabled")

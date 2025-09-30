@@ -18,18 +18,32 @@ from ..core.interfaces import (
 def _get_filename_with_revision(original_filename: str, revision: str) -> str:
     """
     Constrói o nome do arquivo com a revisão adicionada antes da extensão.
+    Verifica se a revisão já existe no nome para evitar duplicação.
 
     Exemplo:
     - "arquivo.pdf" + "A" -> "arquivo_A.pdf"
+    - "arquivo_A.pdf" + "A" -> "arquivo_A.pdf" (não duplica)
     - "arquivo" + "B" -> "arquivo_B"
     """
     name_parts = original_filename.rsplit(".", 1)
+
     if len(name_parts) == 2:
         base_name, extension = name_parts
-        return f"{base_name}_{revision}.{extension}"
+        # Verificar se já termina com _revisão
+        if base_name.endswith(f"_{revision}"):
+            # Já tem a revisão correta, retornar como está
+            return original_filename
+        else:
+            # Adicionar a revisão
+            return f"{base_name}_{revision}.{extension}"
     else:
         # Arquivo sem extensão
-        return f"{original_filename}_{revision}"
+        if original_filename.endswith(f"_{revision}"):
+            # Já tem a revisão correta, retornar como está
+            return original_filename
+        else:
+            # Adicionar a revisão
+            return f"{original_filename}_{revision}"
 
 
 def _apply_header_formatting(sheet, header_row: int, num_columns: int):
@@ -39,7 +53,9 @@ def _apply_header_formatting(sheet, header_row: int, num_columns: int):
         start_color="FFFF00", end_color="FFFF00", fill_type="solid"
     )
     header_font = Font(bold=True, size=11)
-    header_alignment = Alignment(horizontal="center", vertical="center")
+    header_alignment = Alignment(
+        horizontal="center", vertical="center", wrap_text=False
+    )
 
     # Borda para todas as células
     thin_border = Border(
@@ -49,9 +65,16 @@ def _apply_header_formatting(sheet, header_row: int, num_columns: int):
         bottom=Side(style="thin"),
     )
 
-    # Aplicar formatação ao cabeçalho
+    # Aplicar formatação ao cabeçalho - FORÇA aplicação célula por célula
     for col in range(1, num_columns + 1):
         cell = sheet.cell(row=header_row, column=col)
+        # Limpar formatação existente primeiro
+        cell.fill = PatternFill()  # Limpa
+        cell.font = Font()  # Limpa
+        cell.alignment = Alignment()  # Limpa
+        cell.border = Border()  # Limpa
+
+        # Aplicar nova formatação
         cell.fill = header_fill
         cell.font = header_font
         cell.alignment = header_alignment
@@ -93,8 +116,13 @@ def _adjust_column_widths(sheet):
         "I": 20,  # CAMINHO DATABOOK
     }
 
+    # Forçar aplicação das larguras explicitamente
     for column, width in column_widths.items():
-        sheet.column_dimensions[column].width = width
+        dimension = sheet.column_dimensions[column]
+        dimension.width = width
+        # Garantir que a largura foi aplicada
+        if dimension.width != width:
+            dimension.width = width
 
 
 class OpenpyxlTemplateFiller(ITemplateFiller):
@@ -188,18 +216,21 @@ class OpenpyxlTemplateFiller(ITemplateFiller):
         """Aplica toda a formatação necessária à planilha."""
         num_columns = 9  # Total de colunas no template
 
-        # 1. Formatação do cabeçalho (linha 1)
+        # 1. SEMPRE ajustar larguras das colunas primeiro
+        _adjust_column_widths(sheet)
+
+        # 2. Formatação do cabeçalho (linha 1) - FORÇA aplicação
         _apply_header_formatting(sheet, 1, num_columns)
 
-        # 2. Formatação dos dados (se houver)
+        # 3. Formatação dos dados (se houver)
         if num_data_rows > 0:
             data_end_row = data_start_row + num_data_rows - 1
             _apply_data_formatting(sheet, data_start_row, data_end_row, num_columns)
 
-        # 3. Formatação da linha "FIM" (se existir)
+        # 4. Formatação da linha "FIM" (se existir)
         fim_row = data_start_row + num_data_rows
         if sheet.cell(row=fim_row, column=1).value == "FIM":
             _apply_data_formatting(sheet, fim_row, fim_row, num_columns)
 
-        # 4. Ajustar larguras das colunas
+        # 5. Forçar aplicação das larguras novamente (garantia)
         _adjust_column_widths(sheet)
