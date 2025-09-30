@@ -1,4 +1,3 @@
-import openpyxl
 from openpyxl import Workbook
 
 # Criar template com linha FIM conforme exemplo do usuário

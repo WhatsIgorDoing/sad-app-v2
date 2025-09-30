@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List
 
 import openpyxl
-from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 
 from ..core.domain import DocumentGroup
 from ..core.interfaces import (

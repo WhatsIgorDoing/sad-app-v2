@@ -6,8 +6,8 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from sad_app_v2.infrastructure.extraction import ProfiledExtractorService
 from sad_app_v2.core.domain import DocumentFile, DocumentStatus, ManifestItem
+from sad_app_v2.infrastructure.extraction import ProfiledExtractorService
 
 
 def create_test_rir_document():
