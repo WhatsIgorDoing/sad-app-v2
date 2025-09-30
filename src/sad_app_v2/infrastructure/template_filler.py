@@ -14,6 +14,23 @@ from ..core.interfaces import (
 )
 
 
+def _get_filename_with_revision(original_filename: str, revision: str) -> str:
+    """
+    Constrói o nome do arquivo com a revisão adicionada antes da extensão.
+
+    Exemplo:
+    - "arquivo.pdf" + "A" -> "arquivo_A.pdf"
+    - "arquivo" + "B" -> "arquivo_B"
+    """
+    name_parts = original_filename.rsplit(".", 1)
+    if len(name_parts) == 2:
+        base_name, extension = name_parts
+        return f"{base_name}_{revision}.{extension}"
+    else:
+        # Arquivo sem extensão
+        return f"{original_filename}_{revision}"
+
+
 class OpenpyxlTemplateFiller(ITemplateFiller):
     """Implementação que usa openpyxl para preencher templates Excel."""
 
@@ -36,7 +53,18 @@ class OpenpyxlTemplateFiller(ITemplateFiller):
             workbook = openpyxl.load_workbook(output_path)
             sheet = workbook.active
 
-            # Itera sobre cada grupo de documento (que representa um 'documento' lógico)
+            # Encontrar onde inserir os dados (após cabeçalho, antes de "FIM")
+            insert_row = 2  # Por padrão, inserir na linha 2 (após cabeçalho)
+
+            # Procurar pela linha "FIM" para inserir antes dela
+            for row_num in range(2, sheet.max_row + 1):
+                cell_value = sheet.cell(row=row_num, column=1).value
+                if cell_value and str(cell_value).upper() == "FIM":
+                    insert_row = row_num
+                    break
+
+            # Preparar todos os dados primeiro
+            all_rows_data = []
             for group in data:
                 # O ManifestItem é o mesmo para todos os arquivos em um grupo
                 manifest_info = group.files[0].associated_manifest_item
@@ -45,13 +73,18 @@ class OpenpyxlTemplateFiller(ITemplateFiller):
 
                 # Cria uma linha para cada arquivo físico no grupo
                 for file in group.files:
+                    # Construir nome do arquivo com revisão (como ele ficará após ser movido)
+                    revision = manifest_info.revision
+                    filename_with_revision = _get_filename_with_revision(
+                        file.path.name, revision
+                    )
+
                     # Ordem correta dos campos conforme template:
-                    # DOCUMENTO | REVISÃO | TÍTULO | ARQUIVO | FORMATO | DISCIPLINA | TIPO DE DOCUMENTO | PROPÓSITO | CAMINHO DATABOOK
                     row_data = [
                         manifest_info.document_code,  # DOCUMENTO
                         manifest_info.revision,  # REVISÃO
                         manifest_info.title,  # TÍTULO
-                        file.path.name,  # ARQUIVO (nome do arquivo físico)
+                        filename_with_revision,  # ARQUIVO (nome final com revisão)
                         manifest_info.metadata.get("FORMATO", "A4"),  # FORMATO
                         manifest_info.metadata.get("DISCIPLINA", ""),  # DISCIPLINA
                         manifest_info.metadata.get(
@@ -62,7 +95,20 @@ class OpenpyxlTemplateFiller(ITemplateFiller):
                             "CAMINHO DATABOOK", ""
                         ),  # CAMINHO DATABOOK
                     ]
-                    sheet.append(row_data)
+                    all_rows_data.append(row_data)
+
+            # Inserir todas as linhas necessárias ANTES da linha "FIM"
+            if all_rows_data:
+                # Inserir todas as linhas necessárias antes da linha "FIM"
+                for i in range(len(all_rows_data)):
+                    sheet.insert_rows(insert_row)
+
+                # Agora preencher os dados (FIM foi empurrada para baixo)
+                for i, row_data in enumerate(all_rows_data):
+                    target_row = insert_row + i
+                    # Preencher a linha com os dados
+                    for col_num, value in enumerate(row_data, 1):
+                        sheet.cell(row=target_row, column=col_num, value=value)
 
             workbook.save(output_path)
 

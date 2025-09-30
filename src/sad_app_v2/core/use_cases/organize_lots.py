@@ -10,6 +10,23 @@ from ..interfaces import (
 )
 
 
+def _get_filename_with_revision(original_filename: str, revision: str) -> str:
+    """
+    Constrói o nome do arquivo com a revisão adicionada antes da extensão.
+
+    Exemplo:
+    - "arquivo.pdf" + "A" -> "arquivo_A.pdf"
+    - "arquivo" + "B" -> "arquivo_B"
+    """
+    name_parts = original_filename.rsplit(".", 1)
+    if len(name_parts) == 2:
+        base_name, extension = name_parts
+        return f"{base_name}_{revision}.{extension}"
+    else:
+        # Arquivo sem extensão
+        return f"{original_filename}_{revision}"
+
+
 class OrganizeAndGenerateLotsUseCase:
     """Implementa o Caso de Uso UC-03: Organizar e Gerar Lotes de Saída."""
 
@@ -61,7 +78,16 @@ class OrganizeAndGenerateLotsUseCase:
                 # 3b. Movimentação dos Arquivos
                 for group in lot.groups:
                     for file in group.files:
-                        destination_path = lot_directory_path / file.path.name
+                        # Obter informações do manifesto
+                        manifest_item = file.associated_manifest_item
+                        revision = manifest_item.revision if manifest_item else "0"
+
+                        # Construir novo nome do arquivo com revisão
+                        new_filename = _get_filename_with_revision(
+                            file.path.name, revision
+                        )
+
+                        destination_path = lot_directory_path / new_filename
                         self._file_manager.move_file(file.path, destination_path)
                         files_moved_count += 1
 
