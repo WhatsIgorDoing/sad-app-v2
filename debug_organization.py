@@ -2,19 +2,20 @@ import sys
 
 sys.path.insert(0, "src")
 
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
 import openpyxl
 
-from sad_app_v2.core.use_cases.validate_batch import ValidateBatchUseCase
 from sad_app_v2.core.use_cases.organize_lots import OrganizeAndGenerateLotsUseCase
+from sad_app_v2.core.use_cases.validate_batch import ValidateBatchUseCase
 from sad_app_v2.infrastructure.excel_reader import ExcelManifestRepository
 from sad_app_v2.infrastructure.file_system import (
     FileSystemFileRepository,
     SafeFileSystemManager,
 )
-from sad_app_v2.infrastructure.template_filler import OpenpyxlTemplateFiller
 from sad_app_v2.infrastructure.services import GreedyLotBalancerService
+from sad_app_v2.infrastructure.template_filler import OpenpyxlTemplateFiller
 
 
 def test_full_organization():

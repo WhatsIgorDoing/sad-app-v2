@@ -1,5 +1,6 @@
-import openpyxl
 from pathlib import Path
+
+import openpyxl
 
 # Verificar template atual
 template_path = Path("tests/fixtures/template_exemplo.xlsx")

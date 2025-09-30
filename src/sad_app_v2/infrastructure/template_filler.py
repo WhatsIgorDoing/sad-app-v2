@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List
 
 import openpyxl
+from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
 
 from ..core.domain import DocumentGroup
 from ..core.interfaces import (
@@ -29,6 +30,71 @@ def _get_filename_with_revision(original_filename: str, revision: str) -> str:
     else:
         # Arquivo sem extensão
         return f"{original_filename}_{revision}"
+
+
+def _apply_header_formatting(sheet, header_row: int, num_columns: int):
+    """Aplica formatação ao cabeçalho da planilha."""
+    # Estilo do cabeçalho - fundo amarelo, texto em negrito
+    header_fill = PatternFill(
+        start_color="FFFF00", end_color="FFFF00", fill_type="solid"
+    )
+    header_font = Font(bold=True, size=11)
+    header_alignment = Alignment(horizontal="center", vertical="center")
+
+    # Borda para todas as células
+    thin_border = Border(
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin"),
+    )
+
+    # Aplicar formatação ao cabeçalho
+    for col in range(1, num_columns + 1):
+        cell = sheet.cell(row=header_row, column=col)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = header_alignment
+        cell.border = thin_border
+
+
+def _apply_data_formatting(sheet, start_row: int, end_row: int, num_columns: int):
+    """Aplica formatação às linhas de dados."""
+    # Alinhamento padrão para dados
+    data_alignment = Alignment(horizontal="left", vertical="center")
+
+    # Borda para todas as células
+    thin_border = Border(
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin"),
+    )
+
+    # Aplicar formatação aos dados
+    for row in range(start_row, end_row + 1):
+        for col in range(1, num_columns + 1):
+            cell = sheet.cell(row=row, column=col)
+            cell.alignment = data_alignment
+            cell.border = thin_border
+
+
+def _adjust_column_widths(sheet):
+    """Ajusta as larguras das colunas baseado no conteúdo."""
+    column_widths = {
+        "A": 35,  # DOCUMENTO
+        "B": 10,  # REVISÃO
+        "C": 60,  # TÍTULO
+        "D": 35,  # ARQUIVO
+        "E": 10,  # FORMATO
+        "F": 20,  # DISCIPLINA
+        "G": 20,  # TIPO DE DOCUMENTO
+        "H": 20,  # PROPÓSITO
+        "I": 20,  # CAMINHO DATABOOK
+    }
+
+    for column, width in column_widths.items():
+        sheet.column_dimensions[column].width = width
 
 
 class OpenpyxlTemplateFiller(ITemplateFiller):
@@ -110,7 +176,30 @@ class OpenpyxlTemplateFiller(ITemplateFiller):
                     for col_num, value in enumerate(row_data, 1):
                         sheet.cell(row=target_row, column=col_num, value=value)
 
+            # Aplicar formatação à planilha
+            self._apply_formatting(sheet, insert_row, len(all_rows_data))
+
             workbook.save(output_path)
 
         except Exception as e:
             raise TemplateFillError(f"Falha ao preencher o template {output_path}: {e}")
+
+    def _apply_formatting(self, sheet, data_start_row: int, num_data_rows: int):
+        """Aplica toda a formatação necessária à planilha."""
+        num_columns = 9  # Total de colunas no template
+
+        # 1. Formatação do cabeçalho (linha 1)
+        _apply_header_formatting(sheet, 1, num_columns)
+
+        # 2. Formatação dos dados (se houver)
+        if num_data_rows > 0:
+            data_end_row = data_start_row + num_data_rows - 1
+            _apply_data_formatting(sheet, data_start_row, data_end_row, num_columns)
+
+        # 3. Formatação da linha "FIM" (se existir)
+        fim_row = data_start_row + num_data_rows
+        if sheet.cell(row=fim_row, column=1).value == "FIM":
+            _apply_data_formatting(sheet, fim_row, fim_row, num_columns)
+
+        # 4. Ajustar larguras das colunas
+        _adjust_column_widths(sheet)
