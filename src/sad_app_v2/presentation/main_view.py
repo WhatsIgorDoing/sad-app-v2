@@ -179,8 +179,8 @@ class MainView(ctk.CTk):
         self.resolve_button.configure(state=state)
 
     def populate_profiles_dropdown(self, profiles: List[str]):
-        # Adicionar RIR como primeira opção especial
-        rir_profiles = ["🔍 RIR (buscar nome no documento)"] + profiles
+        # Manter apenas a opção RIR no ComboBox
+        rir_profiles = ["RIR (buscar nome no documento)"]
         self.profile_combobox.configure(values=rir_profiles)
         if rir_profiles:
             self.profile_combobox.set(rir_profiles[0])

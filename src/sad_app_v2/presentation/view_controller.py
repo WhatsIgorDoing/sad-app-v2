@@ -9,7 +9,6 @@ import customtkinter as ctk
 
 from sad_app_v2.core.exceptions import CoreError
 from sad_app_v2.core.use_cases.organize_lots import OrganizeAndGenerateLotsUseCase
-from sad_app_v2.core.use_cases.resolve_exception import ResolveUnrecognizedFileUseCase
 from sad_app_v2.core.use_cases.validate_batch import ValidateBatchUseCase
 from sad_app_v2.infrastructure.file_system import (
     FileSystemFileRepository,
@@ -122,135 +121,15 @@ class ViewController:
             return
 
         self.view.set_resolve_panel_state("disabled")
-        profile_id = self.view.profile_combobox.get()
         files_to_resolve = [
             f for f in self.unrecognized_files if f.path.name in selected_filenames
         ]
 
-        # Verificar se RIR foi selecionado (primeira opção do ComboBox)
-        if profile_id.startswith("🔍 RIR"):
-            # Usar lógica específica do RIR
-            for file in files_to_resolve:
-                threading.Thread(
-                    target=self._run_rir_resolution, args=(file,), daemon=True
-                ).start()
-        else:
-            # Usar lógica genérica
-            for file in files_to_resolve:
-                threading.Thread(
-                    target=self._run_resolution, args=(file, profile_id), daemon=True
-                ).start()
-
-    def _run_resolution(self, file: DocumentFile, profile_id: str):
-        try:
-            use_case = ResolveUnrecognizedFileUseCase(
-                self.extractor_service, self.extractor_service
-            )
-            resolved_file = use_case.execute(file, profile_id, self.all_manifest_items)
-
-            # Se o perfil é RIR, renomear arquivo com nome extraído
-            if profile_id == "RIR":
-                self.view.after(
-                    0,
-                    self.view.add_log_message,
-                    f"🔍 RIR GENÉRICO: Processando '{file.path.name}'",
-                )
-
-                # Extrair texto e buscar nome após "Relatório:"
-                extracted_text = self.extractor_service.extract_text(file, profile_id)
-                import re
-
-                # Padrão específico para pegar o código RIR (mais de 3 caracteres, com underscores)
-                pattern = r"Relatório:\s*([A-Z0-9_\.\-]{4,}(?:_[A-Z0-9_\.\-]+)*)"
-                self.view.after(
-                    0,
-                    self.view.add_log_message,
-                    f"🔎 RIR GENÉRICO: Buscando padrão '{pattern}'",
-                )
-
-                # Buscar todas as ocorrências e pegar a que tem mais caracteres
-                matches = re.findall(
-                    pattern, extracted_text, re.IGNORECASE | re.MULTILINE
-                )
-                match = None
-                if matches:
-                    # Pegar a correspondência mais longa (mais específica)
-                    longest_match = max(matches, key=len)
-                    if len(longest_match) > 3:  # Deve ter mais que 3 caracteres
-                        match = type(
-                            "Match", (), {"group": lambda self, n: longest_match}
-                        )()
-                        self.view.after(
-                            0,
-                            self.view.add_log_message,
-                            f"🎯 RIR GENÉRICO: Encontradas {len(matches)} correspondências, usando a mais longa",
-                        )
-                    else:
-                        match = None
-
-                if match:
-                    extracted_name = match.group(1).strip()
-                    self.view.after(
-                        0,
-                        self.view.add_log_message,
-                        f"✅ RIR GENÉRICO: Nome extraído: '{extracted_name}'",
-                    )
-
-                    # Renomear arquivo com nome extraído (sempre usar o nome extraído)
-                    file_manager = SafeFileSystemManager()
-                    original_path = file.path
-                    file_extension = original_path.suffix
-
-                    # Usar revisão do manifesto se disponível, senão usar "A"
-                    revision = (
-                        resolved_file.associated_manifest_item.revision
-                        if resolved_file.associated_manifest_item
-                        else "A"
-                    )
-                    new_filename = f"{extracted_name}_{revision}{file_extension}"
-                    new_path = original_path.parent / new_filename
-
-                    self.view.after(
-                        0,
-                        self.view.add_log_message,
-                        f"🔄 RIR GENÉRICO: Renomeando para '{new_filename}'",
-                    )
-
-                    # Renomear fisicamente
-                    file_manager.move_file(original_path, new_path)
-
-                    # Atualizar caminho do arquivo resolvido
-                    resolved_file.path = new_path
-
-                    manifest_status = (
-                        "manifesto: OK"
-                        if resolved_file.associated_manifest_item
-                        else "manifesto: N/A"
-                    )
-                    success_msg = f"🎉 RIR GENÉRICO: '{original_path.name}' → '{new_filename}' (extraído: '{extracted_name}', {manifest_status})"
-                else:
-                    self.view.after(
-                        0,
-                        self.view.add_log_message,
-                        f"❌ RIR GENÉRICO: Padrão não encontrado",
-                    )
-                    success_msg = f"⚠️ RIR GENÉRICO: '{file.path.name}' resolvido sem extração de nome"
-            else:
-                success_msg = f"Arquivo '{file.path.name}' resolvido com sucesso."
-
-            self.unrecognized_files.remove(file)
-            self.validated_files.append(resolved_file)
-            self.view.after(0, self.view.add_log_message, success_msg)
-            self.view.after(0, self._update_ui_lists)
-        except CoreError as e:
-            self.view.after(
-                0,
-                messagebox.showinfo,
-                "Falha",
-                f"Erro ao resolver '{file.path.name}':\n{e}",
-            )
-        finally:
-            self.view.after(0, self.view.set_resolve_panel_state, "normal")
+        # Usar sempre a lógica RIR (única opção disponível)
+        for file in files_to_resolve:
+            threading.Thread(
+                target=self._run_rir_resolution, args=(file,), daemon=True
+            ).start()
 
     def _run_rir_resolution(self, file: DocumentFile):
         """Executa a resolução específica para RIR em thread separada."""
