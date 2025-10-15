@@ -106,6 +106,7 @@ class MainView(ctk.CTk):
     def _create_organization_tab_layout(self, tab):
         """Cria os widgets para a aba de organização."""
         tab.grid_columnconfigure(1, weight=1)
+        tab.grid_rowconfigure(6, weight=1)  # Adiciona espaço flexível após os controles
 
         # Pasta de Destino
         ctk.CTkLabel(tab, text="Pasta de Destino Raiz:").grid(
@@ -152,13 +153,21 @@ class MainView(ctk.CTk):
             row=4, column=1, columnspan=2, padx=10, pady=10, sticky="ew"
         )
 
-        # Botão Final
+        # Espaçador para evitar que o botão seja coberto em tela cheia
+        spacer = ctk.CTkFrame(tab, height=1, fg_color="transparent")
+        spacer.grid(row=5, column=0, columnspan=3, sticky="ew")
+
+        # Botão Final - com frame separado para garantir visibilidade
+        button_frame = ctk.CTkFrame(tab)
+        button_frame.grid(
+            row=6, column=0, columnspan=3, padx=10, pady=(20, 40), sticky="ew"
+        )
+        button_frame.grid_columnconfigure(0, weight=1)
+
         self.organize_button = ctk.CTkButton(
-            tab, text="ORGANIZAR E GERAR LOTES", height=40, fg_color="green"
+            button_frame, text="ORGANIZAR E GERAR LOTES", height=50, fg_color="green"
         )
-        self.organize_button.grid(
-            row=5, column=0, columnspan=3, padx=10, pady=20, sticky="ew"
-        )
+        self.organize_button.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
 
     def _create_bottom_frame(self):
         # ... (sem alterações)
