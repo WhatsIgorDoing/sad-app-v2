@@ -61,8 +61,29 @@ class MainView(ctk.CTk):
             self.top_frame, text="Selecionar Pasta..."
         )
         self.source_dir_button.grid(row=1, column=2, padx=10, pady=5)
-        self.validate_button = ctk.CTkButton(self, text="VALIDAR LOTE", height=40)
-        self.validate_button.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
+
+        # Criamos um frame para conter os botões principais que serão alternados
+        self.main_action_frame = ctk.CTkFrame(self)
+        self.main_action_frame.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
+        self.main_action_frame.grid_columnconfigure(0, weight=1)
+
+        # Botão de validar lote
+        self.validate_button = ctk.CTkButton(
+            self.main_action_frame, text="VALIDAR LOTE", height=50
+        )
+        self.validate_button.grid(row=0, column=0, padx=10, pady=5, sticky="ew")
+
+        # Botão de organizar e gerar lotes
+        self.organize_button = ctk.CTkButton(
+            self.main_action_frame,
+            text="ORGANIZAR E GERAR LOTES",
+            height=50,
+            fg_color="green",
+        )
+        self.organize_button.grid(row=0, column=0, padx=10, pady=5, sticky="ew")
+
+        # Por padrão, começamos na aba de validação
+        self.organize_button.grid_remove()
 
     def _create_tab_view(self):
         self.tab_view = ctk.CTkTabview(self)
@@ -72,6 +93,9 @@ class MainView(ctk.CTk):
         self.tab_organization = self.tab_view.add("2. Organização e Saída")
         self._create_validation_tab_layout(self.tab_validation)
         self._create_organization_tab_layout(self.tab_organization)
+
+        # Configurar callback para troca de abas
+        self.tab_view.configure(command=self._on_tab_changed)
 
         # Nota: CustomTkinter não suporta desabilitar abas via state
         # A lógica de controle será feita via controller
@@ -106,7 +130,7 @@ class MainView(ctk.CTk):
     def _create_organization_tab_layout(self, tab):
         """Cria os widgets para a aba de organização."""
         tab.grid_columnconfigure(1, weight=1)
-        tab.grid_rowconfigure(6, weight=1)  # Adiciona espaço flexível após os controles
+        tab.grid_rowconfigure(5, weight=1)  # Adiciona espaço flexível após os controles
 
         # Pasta de Destino
         ctk.CTkLabel(tab, text="Pasta de Destino Raiz:").grid(
@@ -153,21 +177,9 @@ class MainView(ctk.CTk):
             row=4, column=1, columnspan=2, padx=10, pady=10, sticky="ew"
         )
 
-        # Espaçador para evitar que o botão seja coberto em tela cheia
+        # Espaçador
         spacer = ctk.CTkFrame(tab, height=1, fg_color="transparent")
         spacer.grid(row=5, column=0, columnspan=3, sticky="ew")
-
-        # Botão Final - com frame separado para garantir visibilidade
-        button_frame = ctk.CTkFrame(tab)
-        button_frame.grid(
-            row=6, column=0, columnspan=3, padx=10, pady=(20, 40), sticky="ew"
-        )
-        button_frame.grid_columnconfigure(0, weight=1)
-
-        self.organize_button = ctk.CTkButton(
-            button_frame, text="ORGANIZAR E GERAR LOTES", height=50, fg_color="green"
-        )
-        self.organize_button.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
 
     def _create_bottom_frame(self):
         # ... (sem alterações)
@@ -292,6 +304,21 @@ class MainView(ctk.CTk):
     def set_organize_button_state(self, state: str):
         """Define o estado do botão organizar (normal/disabled)."""
         self.organize_button.configure(state=state)
+
+    def _on_tab_changed(self):
+        """Callback para alternar entre os botões quando a aba é alterada."""
+        selected_tab = self.tab_view.get()
+
+        if selected_tab == "1. Validação e Resolução":
+            # Mostra o botão de validação e esconde o botão de organização
+            self.validate_button.grid()
+            self.organize_button.grid_remove()
+            self.add_log_message("Modo: Validação de Lote")
+        elif selected_tab == "2. Organização e Saída":
+            # Mostra o botão de organização e esconde o botão de validação
+            self.validate_button.grid_remove()
+            self.organize_button.grid()
+            self.add_log_message("Modo: Organização e Geração de Lotes")
 
     def start(self):
         self.mainloop()
