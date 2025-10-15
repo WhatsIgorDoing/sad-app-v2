@@ -208,20 +208,48 @@ class MainView(ctk.CTk):
         self.validated_list.configure(state="disabled")
 
     def update_unrecognized_list(self, unrecognized_files: List[DocumentFile]):
-        # ... (sem alterações)
         self.unrecognized_label.configure(
             text=f"Arquivos Não Reconhecidos ({len(unrecognized_files)})"
         )
         for widget in self.unrecognized_frame.winfo_children():
             widget.destroy()
         self.unrecognized_checkboxes.clear()
+
+        # Adicionar botão "Selecionar Todos" se houver arquivos não reconhecidos
+        if unrecognized_files:
+            select_all_frame = ctk.CTkFrame(
+                self.unrecognized_frame, fg_color="transparent"
+            )
+            select_all_frame.grid(row=0, column=0, padx=5, pady=(5, 10), sticky="ew")
+
+            self.select_all_button = ctk.CTkButton(
+                select_all_frame,
+                text="Selecionar Todos",
+                command=self._select_all_checkboxes,
+                width=120,
+                height=28,
+            )
+            self.select_all_button.grid(row=0, column=0, padx=5, pady=2, sticky="w")
+
+            self.deselect_all_button = ctk.CTkButton(
+                select_all_frame,
+                text="Desmarcar Todos",
+                command=self._deselect_all_checkboxes,
+                width=120,
+                height=28,
+            )
+            self.deselect_all_button.grid(row=0, column=1, padx=5, pady=2, sticky="w")
+
+        # Adicionar checkboxes para cada arquivo
         for i, file in enumerate(sorted(unrecognized_files, key=lambda f: f.path.name)):
+            # Ajustar índice da linha devido ao botão "Selecionar Todos"
+            row_index = i + 1
             checkbox = ctk.CTkCheckBox(
                 self.unrecognized_frame,
                 text=file.path.name,
                 command=self._on_checkbox_change,
             )
-            checkbox.grid(row=i, column=0, padx=5, pady=2, sticky="w")
+            checkbox.grid(row=row_index, column=0, padx=5, pady=2, sticky="w")
             self.unrecognized_checkboxes[file.path.name] = checkbox
 
     def add_log_message(self, message: str):
@@ -238,6 +266,22 @@ class MainView(ctk.CTk):
 
     def _on_checkbox_change(self):
         """Callback chamado quando um checkbox é marcado/desmarcado."""
+        if self.controller:
+            self.controller.on_checkbox_selection_changed()
+
+    def _select_all_checkboxes(self):
+        """Marca todos os checkboxes de arquivos não reconhecidos."""
+        for checkbox in self.unrecognized_checkboxes.values():
+            checkbox.select()
+        # Notificar o controller sobre a mudança
+        if self.controller:
+            self.controller.on_checkbox_selection_changed()
+
+    def _deselect_all_checkboxes(self):
+        """Desmarca todos os checkboxes de arquivos não reconhecidos."""
+        for checkbox in self.unrecognized_checkboxes.values():
+            checkbox.deselect()
+        # Notificar o controller sobre a mudança
         if self.controller:
             self.controller.on_checkbox_selection_changed()
 
