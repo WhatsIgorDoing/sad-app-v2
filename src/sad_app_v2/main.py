@@ -31,9 +31,9 @@ def main():
     app.set_controller(controller)
     controller.set_view(app)
 
-    # Carregar perfis no ComboBox
-    profiles = ["PID", "GERAL"]  # Perfis além do RIR
-    app.populate_profiles_dropdown(profiles)
+    # Carregar perfis no ComboBox - apenas RIR é utilizado
+    # Parâmetro vazio, será substituído por RIR dentro do método
+    app.populate_profiles_dropdown([])
 
     # Inicialização da aplicação
     app.mainloop()

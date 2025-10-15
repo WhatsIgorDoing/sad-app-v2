@@ -200,7 +200,14 @@ class MainView(ctk.CTk):
         self.resolve_button.configure(state=state)
 
     def populate_profiles_dropdown(self, profiles: List[str]):
-        # Manter apenas a opção RIR no ComboBox
+        """
+        Configura o ComboBox de perfis de resolução.
+        Independente dos perfis passados, mantém apenas a opção RIR disponível.
+
+        Args:
+            profiles: Lista de perfis (ignorada atualmente, apenas RIR é usado)
+        """
+        # Manter apenas a opção RIR no ComboBox, ignorando outros perfis
         rir_profiles = ["RIR (buscar nome no documento)"]
         self.profile_combobox.configure(values=rir_profiles)
         if rir_profiles:
