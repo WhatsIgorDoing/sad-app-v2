@@ -64,6 +64,27 @@ class OrganizeAndGenerateLotsUseCase:
         lot_name_pattern: str,
     ) -> OrganizationResult:
         try:
+            # Validação inicial - verificar se os arquivos existem
+            nonexistent_files = []
+            for file in validated_files:
+                if not file.path.exists():
+                    nonexistent_files.append(file)
+
+            if nonexistent_files:
+                error_msg = (
+                    "Alguns arquivos não foram encontrados nos caminhos esperados:\n"
+                )
+                # Limitar a 5 para não ficar muito grande
+                for missing in nonexistent_files[:5]:
+                    error_msg += f"- {missing.path}\n"
+                if len(nonexistent_files) > 5:
+                    error_msg += f"...e mais {len(nonexistent_files) - 5} arquivo(s).\n"
+                error_msg += (
+                    "\nPossível causa: Arquivos foram renomeados mas os caminhos "
+                    "não foram atualizados corretamente."
+                )
+                raise CoreError(error_msg)
+
             # 1. Agrupamento
             groups_map: Dict[str, DocumentGroup] = {}
             for file in validated_files:
@@ -124,5 +145,6 @@ class OrganizeAndGenerateLotsUseCase:
             )
 
         except CoreError as e:
-            # Se qualquer operação de infraestrutura falhar, retorna um resultado de erro.
+            # Se qualquer operação de infraestrutura falhar, retorna um resultado
+            # com erro informando o problema.
             return OrganizationResult(success=False, message=str(e))

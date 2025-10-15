@@ -288,6 +288,8 @@ class ViewController:
             resolved_file = DocumentFile(new_path, file.size_bytes)
             if matched_item:
                 resolved_file.manifest_item = matched_item
+                # Agora só precisamos definir manifest_item, que atualizará automaticamente os dois campos
+                # pois implementamos um property setter que cuida disso
                 resolved_file.status = DocumentStatus.VALIDATED
                 self.view.after(
                     0,

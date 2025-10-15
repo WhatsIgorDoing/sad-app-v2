@@ -32,11 +32,24 @@ class DocumentFile:
     status: DocumentStatus = DocumentStatus.UNVALIDATED
     # A associação é feita após a validação bem-sucedida.
     associated_manifest_item: Optional[ManifestItem] = None
+    # Campo para compatibilidade com versões antigas do código
+    _manifest_item: Optional[ManifestItem] = None
 
     def __post_init__(self):
         # Garante que o path seja sempre um objeto Path.
         if not isinstance(self.path, Path):
             self.path = Path(self.path)
+
+    @property
+    def manifest_item(self):
+        """Getter para manter compatibilidade com código legado."""
+        return self.associated_manifest_item
+
+    @manifest_item.setter
+    def manifest_item(self, value):
+        """Setter que atualiza ambos os campos para manter compatibilidade."""
+        self.associated_manifest_item = value
+        self._manifest_item = value
 
 
 @dataclass
