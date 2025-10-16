@@ -77,15 +77,26 @@ class ValidateBatchUseCase:
         # 4. Itera sobre os arquivos do disco para validação
         for file in disk_files:
             base_name = self._get_file_base_name(file.path.name)
+            file_stem = Path(file.path.name).stem  # Nome sem extensão
+
+            # Verificar se tem sufixo (comparando com nome base)
+            has_suffix = file_stem != base_name
 
             # 5. Tenta encontrar a correspondência no manifesto
             matched_item = manifest_map.get(base_name)
 
             if matched_item:
-                # Sucesso: A correspondência foi encontrada
-                file.status = DocumentStatus.VALIDATED
-                file.associated_manifest_item = matched_item
-                validated_files.append(file)
+                # Verificar se o arquivo tem sufixo
+                if has_suffix:
+                    # Sucesso completo: A correspondência foi encontrada e já tem sufixo
+                    file.status = DocumentStatus.VALIDATED
+                    file.associated_manifest_item = matched_item
+                    validated_files.append(file)
+                else:
+                    # O nome base coincide, mas falta o sufixo
+                    file.status = DocumentStatus.NEEDS_SUFFIX
+                    file.associated_manifest_item = matched_item
+                    unrecognized_files.append(file)
             else:
                 # Falha: Nenhuma correspondência encontrada
                 file.status = DocumentStatus.UNRECOGNIZED

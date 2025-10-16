@@ -141,6 +141,60 @@ class ViewController:
                 f"🔍 RIR: Iniciando resolução para '{file.path.name}'",
             )
 
+            # Verificar se é um arquivo que só precisa de sufixo
+            if (
+                file.status == DocumentStatus.NEEDS_SUFFIX
+                and file.associated_manifest_item
+            ):
+                self.view.after(
+                    0,
+                    self.view.add_log_message,
+                    f"⚠️ RIR: Arquivo '{file.path.name}' encontrado no manifesto, "
+                    f"mas sem sufixo",
+                )
+
+                # Usar o nome existente e adicionar sufixo
+                original_path = file.path
+                file_extension = original_path.suffix
+                file_name_without_ext = original_path.stem
+
+                # Usar a revisão do item do manifesto
+                revision = file.associated_manifest_item.revision
+                new_filename = f"{file_name_without_ext}_{revision}{file_extension}"
+
+                self.view.after(
+                    0,
+                    self.view.add_log_message,
+                    f"🔄 RIR: Adicionando sufixo: '{original_path.name}' → "
+                    f"'{new_filename}'",
+                )
+
+                # Renomear o arquivo
+                new_path = original_path.parent / new_filename
+                file_manager = SafeFileSystemManager()
+                file_manager.move_file(original_path, new_path)
+
+                # Atualizar o status do arquivo
+                file.status = DocumentStatus.VALIDATED
+                file.path = new_path
+
+                # Atualizar listas
+                self.unrecognized_files.remove(file)
+                self.validated_files.append(file)
+
+                self.view.after(
+                    0,
+                    self.view.add_log_message,
+                    f"✅ RIR: Arquivo renomeado e validado com sucesso: "
+                    f"'{new_filename}'",
+                )
+
+                # Atualizar interface
+                self.view.after(0, self._update_ui_lists)
+                return
+
+            # Continuar com o fluxo normal para arquivos não reconhecidos
+
             # 1. Extrair texto do documento
             self.view.after(
                 0,
@@ -151,7 +205,7 @@ class ViewController:
 
             if not extracted_text:
                 self.view.after(
-                    0, self.view.add_log_message, f"❌ RIR: Falha na extração de texto"
+                    0, self.view.add_log_message, "❌ RIR: Falha na extração de texto"
                 )
                 raise CoreError("Não foi possível extrair texto do documento")
 
@@ -166,7 +220,8 @@ class ViewController:
             # 2. Buscar nome após "Relatório:" especificamente
             import re
 
-            # Padrão específico para pegar o código RIR (mais de 3 caracteres, com underscores)
+            # Padrão específico para pegar o código RIR
+            # (mais de 3 caracteres, com underscores)
             pattern = r"Relatório:\s*([A-Z0-9_\.\-]{4,}(?:_[A-Z0-9_\.\-]+)*)"
             self.view.after(
                 0, self.view.add_log_message, f"🔎 RIR: Buscando padrão: '{pattern}'"
@@ -194,7 +249,7 @@ class ViewController:
                 self.view.after(
                     0,
                     self.view.add_log_message,
-                    f"❌ RIR: Padrão não encontrado no texto",
+                    "❌ RIR: Padrão não encontrado no texto",
                 )
                 raise CoreError(
                     "Não foi encontrado nome do relatório após 'Relatório:' no documento"
@@ -257,8 +312,8 @@ class ViewController:
             file_extension = original_path.suffix
 
             # Gerar novo nome: nome_extraído_revisão.extensão
-            # Se encontrou no manifesto, usar a revisão. Senão, usar "A" como padrão
-            revision = matched_item.revision if matched_item else "A"
+            # Se encontrou no manifesto, usar a revisão. Senão, usar "0" como padrão
+            revision = matched_item.revision if matched_item else "0"
             new_filename = f"{extracted_name}_{revision}{file_extension}"
             new_path = original_path.parent / new_filename
 
@@ -272,11 +327,11 @@ class ViewController:
             self.view.after(
                 0,
                 self.view.add_log_message,
-                f"💾 RIR: Executando renomeação física do arquivo",
+                "💾 RIR: Executando renomeação física do arquivo",
             )
             file_manager.move_file(original_path, new_path)
             self.view.after(
-                0, self.view.add_log_message, f"✅ RIR: Arquivo renomeado com sucesso"
+                0, self.view.add_log_message, "✅ RIR: Arquivo renomeado com sucesso"
             )
 
             # 5. Criar arquivo resolvido com novo caminho
@@ -294,7 +349,7 @@ class ViewController:
                 self.view.after(
                     0,
                     self.view.add_log_message,
-                    f"✅ RIR: Status definido como VALIDATED",
+                    "✅ RIR: Status definido como VALIDATED",
                 )
             else:
                 # Se não encontrou no manifesto, manter como reconhecido mas sem item
@@ -302,12 +357,12 @@ class ViewController:
                 self.view.after(
                     0,
                     self.view.add_log_message,
-                    f"⚠️ RIR: Status definido como RECOGNIZED (sem manifesto)",
+                    "⚠️ RIR: Status definido como RECOGNIZED (sem manifesto)",
                 )
 
             # 6. Atualizar listas
             self.view.after(
-                0, self.view.add_log_message, f"📊 RIR: Atualizando listas de arquivos"
+                0, self.view.add_log_message, "📊 RIR: Atualizando listas de arquivos"
             )
             self.unrecognized_files.remove(file)
             if matched_item:
@@ -336,7 +391,7 @@ class ViewController:
 
             self.view.after(0, self.view.add_log_message, log_msg)
             self.view.after(
-                0, self.view.add_log_message, f"🔄 RIR: Atualizando interface..."
+                0, self.view.add_log_message, "🔄 RIR: Atualizando interface..."
             )
             self.view.after(0, self._update_ui_lists)
 

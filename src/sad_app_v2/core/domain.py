@@ -10,6 +10,7 @@ class DocumentStatus(enum.Enum):
     VALIDATED = "Validado"
     UNRECOGNIZED = "Não Reconhecido"
     ERROR = "Erro"
+    NEEDS_SUFFIX = "Precisa de Sufixo"
 
 
 @dataclass

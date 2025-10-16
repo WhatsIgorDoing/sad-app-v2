@@ -1,5 +1,5 @@
 from typing import Dict, List
-
+import tkinter as tk
 import customtkinter as ctk
 
 from ..core.domain import DocumentFile
@@ -19,9 +19,13 @@ class MainView(ctk.CTk):
 
         self.unrecognized_checkboxes: Dict[str, ctk.CTkCheckBox] = {}
 
+        # Criação do menu
+        self._create_menu()
+
         self._create_top_frame()
         self._create_tab_view()
         self._create_bottom_frame()
+        self._create_copyright_footer()
 
     def set_controller(self, controller):
         """Define o controller para a view."""
@@ -326,6 +330,38 @@ class MainView(ctk.CTk):
             self.validate_button.grid_remove()
             self.organize_button.grid()
             self.add_log_message("Modo: Organização e Geração de Lotes")
+
+    def _create_menu(self):
+        """Cria o menu da aplicação."""
+        # Criamos um menu padrão do Tkinter
+        menubar = tk.Menu(self)
+        self.configure(menu=menubar)
+
+        # Menu Arquivo
+        file_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Arquivo", menu=file_menu)
+        file_menu.add_command(label="Sair", command=self.destroy)
+
+    def _create_copyright_footer(self):
+        """Cria o rodapé com informações de copyright."""
+        copyright_frame = ctk.CTkFrame(self, fg_color="#1a1a1a", height=30)
+        copyright_frame.grid(row=4, column=0, sticky="ew")
+        copyright_frame.grid_columnconfigure(0, weight=1)
+
+        copyright_text = (
+            "© 2025 Igor Bueno - Todos os direitos reservados. "
+            "SAD App v2.0 - Propriedade Intelectual Protegida"
+        )
+        copyright_label = ctk.CTkLabel(
+            copyright_frame,
+            text=copyright_text,
+            font=ctk.CTkFont(size=12),
+            text_color="#cccccc",
+        )
+        copyright_label.grid(row=0, column=0, padx=10, pady=5)
+
+    # O diálogo 'Sobre' foi removido, mantendo apenas o rodapé
+    # com informações de copyright
 
     def start(self):
         self.mainloop()
