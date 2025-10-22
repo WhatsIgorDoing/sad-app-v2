@@ -6,13 +6,16 @@ from tkinter import filedialog, messagebox
 from typing import List
 
 import customtkinter as ctk
-
 from sad_app_v2.core.exceptions import CoreError
 from sad_app_v2.core.use_cases.organize_lots import OrganizeAndGenerateLotsUseCase
 from sad_app_v2.core.use_cases.validate_batch import ValidateBatchUseCase
 from sad_app_v2.infrastructure.file_system import (
     FileSystemFileRepository,
     SafeFileSystemManager,
+)
+from sad_app_v2.infrastructure.safe_file_operations import (
+    SafeFileRenamer,
+    generate_safe_filename,
 )
 from sad_app_v2.infrastructure.services import GreedyLotBalancerService
 from sad_app_v2.infrastructure.template_filler import OpenpyxlTemplateFiller
@@ -48,6 +51,8 @@ class ViewController:
             self.manifest_path = Path(path)
             self.view.manifest_entry.delete(0, ctk.END)
             self.view.manifest_entry.insert(0, str(path))
+            # Desabilita o botão de organizar quando novo manifesto é selecionado
+            self.view.disable_organize_button()
 
     def select_source_directory(self):
         path = filedialog.askdirectory(title="Selecione a Pasta de Origem")
@@ -55,6 +60,8 @@ class ViewController:
             self.source_directory = Path(path)
             self.view.source_dir_entry.delete(0, ctk.END)
             self.view.source_dir_entry.insert(0, str(path))
+            # Desabilita o botão de organizar quando nova pasta é selecionada
+            self.view.disable_organize_button()
 
     def select_output_directory(self):
         path = filedialog.askdirectory(title="Selecione a Pasta de Destino Raiz")
@@ -62,6 +69,8 @@ class ViewController:
             self.output_directory = Path(path)
             self.view.output_dir_entry.delete(0, ctk.END)
             self.view.output_dir_entry.insert(0, str(path))
+            # Desabilita o botão de organizar quando nova pasta é selecionada
+            self.view.disable_organize_button()
 
     def select_master_template_file(self):
         path = filedialog.askopenfilename(
@@ -171,8 +180,41 @@ class ViewController:
 
                 # Renomear o arquivo
                 new_path = original_path.parent / new_filename
-                file_manager = SafeFileSystemManager()
-                file_manager.move_file(original_path, new_path)
+
+                # Verificar se já tem o nome correto (evitar renomear para o mesmo nome)
+                if original_path.name == new_filename:
+                    self.view.after(
+                        0,
+                        self.view.add_log_message,
+                        f"✅ RIR: Arquivo já possui o nome correto: '{new_filename}'",
+                    )
+                    final_filename = new_filename
+                else:
+                    # Usar renomeação segura
+                    try:
+                        success, final_path = SafeFileRenamer.safe_rename_file(
+                            original_path, new_path
+                        )
+                        final_filename = final_path.name
+
+                        self.view.after(
+                            0,
+                            self.view.add_log_message,
+                            f"✅ RIR: Arquivo renomeado com segurança: '{final_filename}'",
+                        )
+
+                        # Usar o nome final para as próximas operações
+                        new_filename = final_filename
+
+                    except Exception as rename_error:
+                        self.view.after(
+                            0,
+                            self.view.add_log_message,
+                            f"❌ RIR ERRO CRÍTICO: Falha na renomeação: {rename_error}",
+                        )
+                        raise CoreError(
+                            f"Falha crítica na renomeação de '{original_path.name}': {rename_error}"
+                        )
 
                 # Atualizar o status do arquivo
                 file.status = DocumentStatus.VALIDATED
@@ -307,7 +349,6 @@ class ViewController:
                 self.view.add_log_message,
                 f"📁 RIR: Preparando renomeação de '{file.path.name}'",
             )
-            file_manager = SafeFileSystemManager()
             original_path = file.path
             file_extension = original_path.suffix
 
@@ -329,10 +370,37 @@ class ViewController:
                 self.view.add_log_message,
                 "💾 RIR: Executando renomeação física do arquivo",
             )
-            file_manager.move_file(original_path, new_path)
-            self.view.after(
-                0, self.view.add_log_message, "✅ RIR: Arquivo renomeado com sucesso"
-            )
+
+            # Verificar se já tem o nome correto (evitar renomear para o mesmo nome)
+            if original_path.name == new_filename:
+                self.view.after(
+                    0,
+                    self.view.add_log_message,
+                    f"✅ RIR: Arquivo já possui o nome correto: '{new_filename}'",
+                )
+                final_filename = new_filename
+            else:
+                # Usar renomeação segura
+                try:
+                    success, final_path = SafeFileRenamer.safe_rename_file(
+                        original_path, new_path
+                    )
+                    final_filename = final_path.name
+
+                    self.view.after(
+                        0,
+                        self.view.add_log_message,
+                        f"✅ RIR: Arquivo renomeado com segurança: '{final_filename}'",
+                    )
+                except Exception as rename_error:
+                    self.view.after(
+                        0,
+                        self.view.add_log_message,
+                        f"❌ RIR ERRO CRÍTICO: Falha na renomeação: {rename_error}",
+                    )
+                    raise CoreError(
+                        f"Falha crítica na renomeação de '{original_path.name}': {rename_error}"
+                    )
 
             # 5. Criar arquivo resolvido com novo caminho
             self.view.after(

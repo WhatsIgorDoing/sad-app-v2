@@ -15,9 +15,12 @@ def build_executable():
     # Diretório do projeto
     project_dir = Path(__file__).parent
 
+    # Usar o pyinstaller do ambiente virtual
+    venv_pyinstaller = project_dir / ".venv" / "Scripts" / "pyinstaller.exe"
+
     # Comando PyInstaller
     cmd = [
-        "pyinstaller",
+        str(venv_pyinstaller),  # Usar o executável do venv
         "--name=SAD_App_v2",  # Nome do executável
         "--onefile",  # Arquivo único
         "--windowed",  # Interface gráfica

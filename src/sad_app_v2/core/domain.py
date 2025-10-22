@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 class DocumentStatus(enum.Enum):
     UNVALIDATED = "Não Validado"
     VALIDATED = "Validado"
+    RECOGNIZED = "Reconhecido"  # Arquivo renomeado mas sem correspondência no manifesto
     UNRECOGNIZED = "Não Reconhecido"
     ERROR = "Erro"
     NEEDS_SUFFIX = "Precisa de Sufixo"

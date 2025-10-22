@@ -213,6 +213,11 @@ class MainController:
             f"✅ Validação concluída! {validated_count} válidos, "
             f"{unrecognized_count} não reconhecidos"
         )
+
+        # Habilita o botão de organizar se há arquivos validados
+        if validated_count > 0:
+            self.view.enable_organize_button()
+
         self._reset_validation_button()
 
     def _reset_validation_button(self) -> None:

@@ -1,5 +1,5 @@
 from typing import Dict, List
-import tkinter as tk
+
 import customtkinter as ctk
 
 from ..core.domain import DocumentFile
@@ -15,17 +15,21 @@ class MainView(ctk.CTk):
         self.minsize(1024, 768)
 
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(2, weight=1)
+        # Dar mais peso à área central (tab_view) para crescer mais em tela cheia
+        self.grid_rowconfigure(2, weight=10)  # Aumentando o peso de 1 para 10
+        # Garantindo que outros elementos não expandam verticalmente
+        self.grid_rowconfigure((0, 1, 3, 4), weight=0)
 
         self.unrecognized_checkboxes: Dict[str, ctk.CTkCheckBox] = {}
 
-        # Criação do menu
-        self._create_menu()
-
         self._create_top_frame()
+        self._create_main_action_frame()
         self._create_tab_view()
         self._create_bottom_frame()
         self._create_copyright_footer()
+
+        # Configurar estado inicial dos botões após todos os componentes serem criados
+        self._setup_initial_button_state()
 
     def set_controller(self, controller):
         """Define o controller para a view."""
@@ -66,28 +70,33 @@ class MainView(ctk.CTk):
         )
         self.source_dir_button.grid(row=1, column=2, padx=10, pady=5)
 
-        # Criamos um frame para conter os botões principais que serão alternados
+    def _create_main_action_frame(self):
+        """Cria o frame com os botões principais lado a lado"""
+        # Criamos um frame para conter os botões principais lado a lado
         self.main_action_frame = ctk.CTkFrame(self)
         self.main_action_frame.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
-        self.main_action_frame.grid_columnconfigure(0, weight=1)
+        self.main_action_frame.grid_columnconfigure((0, 1), weight=1)
 
-        # Botão de validar lote
+        # Botão de Validação (esquerda) - azul
         self.validate_button = ctk.CTkButton(
-            self.main_action_frame, text="VALIDAR LOTE", height=50
+            self.main_action_frame,
+            text="VALIDAR LOTE",
+            height=50,
+            fg_color="#1e3a8a",  # azul escuro
+            hover_color="#1e40af",  # azul um pouco mais claro no hover
         )
-        self.validate_button.grid(row=0, column=0, padx=10, pady=5, sticky="ew")
+        self.validate_button.grid(row=0, column=0, padx=(10, 5), pady=5, sticky="ew")
 
-        # Botão de organizar e gerar lotes
+        # Botão de Organização (direita) - verde, inicialmente desabilitado
         self.organize_button = ctk.CTkButton(
             self.main_action_frame,
             text="ORGANIZAR E GERAR LOTES",
             height=50,
-            fg_color="green",
+            fg_color="#166534",  # verde escuro
+            hover_color="#15803d",  # verde um pouco mais claro no hover
+            state="disabled",  # inicialmente desabilitado
         )
-        self.organize_button.grid(row=0, column=0, padx=10, pady=5, sticky="ew")
-
-        # Por padrão, começamos na aba de validação
-        self.organize_button.grid_remove()
+        self.organize_button.grid(row=0, column=1, padx=(5, 10), pady=5, sticky="ew")
 
     def _create_tab_view(self):
         self.tab_view = ctk.CTkTabview(self)
@@ -134,64 +143,94 @@ class MainView(ctk.CTk):
     def _create_organization_tab_layout(self, tab):
         """Cria os widgets para a aba de organização."""
         tab.grid_columnconfigure(1, weight=1)
-        tab.grid_rowconfigure(5, weight=1)  # Adiciona espaço flexível após os controles
+        # Adiciona espaço flexível após os controles, com peso maior para expandir mais
+        tab.grid_rowconfigure(1, weight=5)
+
+        # Usar um scrollable frame para garantir que todos os controles sejam acessíveis
+        # mesmo quando a janela for redimensionada
+        scroll_frame = ctk.CTkScrollableFrame(tab, height=450, width=800)
+        scroll_frame.grid(
+            row=0, column=0, columnspan=3, padx=10, pady=10, sticky="nsew"
+        )
+        scroll_frame.grid_columnconfigure(0, weight=1)
+
+        # Criar um frame principal para conter todos os controles
+        # Isso ajudará a garantir que os controles se mantenham juntos
+        main_config_frame = ctk.CTkFrame(scroll_frame)
+        main_config_frame.grid(row=0, column=0, padx=5, pady=5, sticky="new")
+        main_config_frame.grid_columnconfigure(1, weight=1)
 
         # Pasta de Destino
-        ctk.CTkLabel(tab, text="Pasta de Destino Raiz:").grid(
+        ctk.CTkLabel(main_config_frame, text="Pasta de Destino Raiz:").grid(
             row=0, column=0, padx=10, pady=10, sticky="w"
         )
         self.output_dir_entry = ctk.CTkEntry(
-            tab, placeholder_text="Selecione a pasta para salvar os lotes..."
+            main_config_frame,
+            placeholder_text="Selecione a pasta para salvar os lotes...",
         )
         self.output_dir_entry.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
-        self.output_dir_button = ctk.CTkButton(tab, text="Selecionar...")
+        self.output_dir_button = ctk.CTkButton(main_config_frame, text="Selecionar...")
         self.output_dir_button.grid(row=0, column=2, padx=10, pady=10)
 
         # Template Mestre
-        ctk.CTkLabel(tab, text="Template de Manifesto:").grid(
+        ctk.CTkLabel(main_config_frame, text="Template de Manifesto:").grid(
             row=1, column=0, padx=10, pady=10, sticky="w"
         )
         self.template_entry = ctk.CTkEntry(
-            tab, placeholder_text="Selecione o arquivo de template .xlsx..."
+            main_config_frame,
+            placeholder_text="Selecione o arquivo de template .xlsx...",
         )
         self.template_entry.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
-        self.template_button = ctk.CTkButton(tab, text="Selecionar...")
+        self.template_button = ctk.CTkButton(main_config_frame, text="Selecionar...")
         self.template_button.grid(row=1, column=2, padx=10, pady=10)
 
-        # Configurações Numéricas
-        ctk.CTkLabel(tab, text="Máx. de Documentos por Lote:").grid(
-            row=2, column=0, padx=10, pady=10, sticky="w"
+        # Configurações Numéricas - Layout de duas colunas para economia de espaço
+        num_config_frame = ctk.CTkFrame(main_config_frame)
+        num_config_frame.grid(
+            row=2, column=0, columnspan=3, padx=10, pady=10, sticky="ew"
         )
-        self.max_docs_entry = ctk.CTkEntry(tab)
-        self.max_docs_entry.grid(row=2, column=1, padx=(10, 0), pady=10, sticky="w")
+        num_config_frame.grid_columnconfigure((1, 3), weight=1)
 
-        ctk.CTkLabel(tab, text="Nº Sequencial Inicial (XXXX):").grid(
-            row=3, column=0, padx=10, pady=10, sticky="w"
+        # Máximo de documentos por lote
+        ctk.CTkLabel(num_config_frame, text="Máx. de Documentos por Lote:").grid(
+            row=0, column=0, padx=10, pady=10, sticky="w"
         )
-        self.seq_num_entry = ctk.CTkEntry(tab)
-        self.seq_num_entry.grid(row=3, column=1, padx=(10, 0), pady=10, sticky="w")
+        self.max_docs_entry = ctk.CTkEntry(num_config_frame, width=100)
+        self.max_docs_entry.grid(row=0, column=1, padx=10, pady=10, sticky="w")
+
+        # Nº Sequencial Inicial
+        ctk.CTkLabel(num_config_frame, text="Nº Sequencial Inicial (XXXX):").grid(
+            row=0, column=2, padx=10, pady=10, sticky="w"
+        )
+        self.seq_num_entry = ctk.CTkEntry(num_config_frame, width=100)
+        self.seq_num_entry.grid(row=0, column=3, padx=10, pady=10, sticky="w")
 
         # Padrão de Nomenclatura
-        ctk.CTkLabel(tab, text="Padrão de Nomenclatura:").grid(
-            row=4, column=0, padx=10, pady=10, sticky="w"
-        )
-        self.lot_pattern_entry = ctk.CTkEntry(tab)
-        self.lot_pattern_entry.insert(0, "0130869-CZ6-PGV-G-XXXX-2025-eGRDT")
-        self.lot_pattern_entry.grid(
-            row=4, column=1, columnspan=2, padx=10, pady=10, sticky="ew"
-        )
+        pattern_frame = ctk.CTkFrame(main_config_frame)
+        pattern_frame.grid(row=3, column=0, columnspan=3, padx=10, pady=10, sticky="ew")
+        pattern_frame.grid_columnconfigure(1, weight=1)
 
-        # Espaçador
-        spacer = ctk.CTkFrame(tab, height=1, fg_color="transparent")
+        ctk.CTkLabel(pattern_frame, text="Padrão de Nomenclatura:").grid(
+            row=0, column=0, padx=10, pady=10, sticky="w"
+        )
+        self.lot_pattern_entry = ctk.CTkEntry(pattern_frame)
+        self.lot_pattern_entry.insert(0, "0130869-CZ6-PGV-G-XXXX-2025-eGRDT")
+        self.lot_pattern_entry.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
+
+        # Espaçador para separar os controles do restante da área
+        spacer = ctk.CTkFrame(tab, height=20, fg_color="transparent")
         spacer.grid(row=5, column=0, columnspan=3, sticky="ew")
 
     def _create_bottom_frame(self):
-        # ... (sem alterações)
+        # Área de log e progresso
         self.bottom_frame = ctk.CTkFrame(self)
         self.bottom_frame.grid(row=3, column=0, padx=10, pady=10, sticky="ew")
         self.bottom_frame.grid_columnconfigure(0, weight=1)
-        self.log_textbox = ctk.CTkTextbox(self.bottom_frame, height=150)
+
+        # Reduzimos a altura do log para não cobrir elementos importantes
+        self.log_textbox = ctk.CTkTextbox(self.bottom_frame, height=120)
         self.log_textbox.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+
         self.progress_bar = ctk.CTkProgressBar(self.bottom_frame)
         self.progress_bar.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="ew")
         self.clear_log()
@@ -316,31 +355,40 @@ class MainView(ctk.CTk):
         """Define o estado do botão organizar (normal/disabled)."""
         self.organize_button.configure(state=state)
 
+    def _setup_initial_button_state(self):
+        """Configura o estado inicial dos botões após todos os componentes serem criados."""
+        # Botão de validação sempre ativo
+        self.validate_button.configure(state="normal")
+        # Botão de organização inicialmente desabilitado
+        self.organize_button.configure(state="disabled")
+        # Log inicial
+        self.add_log_message("Sistema iniciado - Pronto para validação de lote")
+
+    def enable_organize_button(self):
+        """Habilita o botão de organização quando a validação for concluída."""
+        self.organize_button.configure(state="normal")
+        self.add_log_message("✅ Botão 'Organizar e Gerar Lotes' habilitado")
+
+    def disable_organize_button(self):
+        """Desabilita o botão de organização."""
+        self.organize_button.configure(state="disabled")
+        self.add_log_message("⚠️ Botão 'Organizar e Gerar Lotes' desabilitado")
+
     def _on_tab_changed(self):
-        """Callback para alternar entre os botões quando a aba é alterada."""
+        """Callback para alternar entre as abas - não mais usado para esconder/mostrar botões."""
+        # Verificar se todos os componentes necessários foram criados
+        required_components = ["log_textbox", "validate_button", "organize_button"]
+        if not all(hasattr(self, comp) for comp in required_components):
+            return
+
         selected_tab = self.tab_view.get()
 
         if selected_tab == "1. Validação e Resolução":
-            # Mostra o botão de validação e esconde o botão de organização
-            self.validate_button.grid()
-            self.organize_button.grid_remove()
-            self.add_log_message("Modo: Validação de Lote")
+            self.add_log_message("📋 Aba: Validação e Resolução")
         elif selected_tab == "2. Organização e Saída":
-            # Mostra o botão de organização e esconde o botão de validação
-            self.validate_button.grid_remove()
-            self.organize_button.grid()
-            self.add_log_message("Modo: Organização e Geração de Lotes")
+            self.add_log_message("📦 Aba: Organização e Saída")
 
-    def _create_menu(self):
-        """Cria o menu da aplicação."""
-        # Criamos um menu padrão do Tkinter
-        menubar = tk.Menu(self)
-        self.configure(menu=menubar)
-
-        # Menu Arquivo
-        file_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Arquivo", menu=file_menu)
-        file_menu.add_command(label="Sair", command=self.destroy)
+    # O menu da aplicação foi removido para simplificar a interface
 
     def _create_copyright_footer(self):
         """Cria o rodapé com informações de copyright."""
